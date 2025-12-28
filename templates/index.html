@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robinhood Portfolio Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/index.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+            <h1>Portfolio Tracker</h1>
+            <p class="subtitle">Track your stock allocations and sector investments</p>
+            <div id="status" style="margin-top: 8px; display: flex; align-items: center;">
+                <span class="status-indicator status-disconnected"></span>
+                <span id="status-text">Not connected</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="/compare" class="header-button" id="search-button" style="text-decoration: none; align-items: center; gap: 8px;">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </a>
+                <a href="/what-if" class="header-button" id="what-if-button" style="text-decoration: none; align-items: center; gap: 6px; white-space: nowrap;">
+                    <i class="fas fa-calculator"></i>
+                    <span>What If</span>
+                </a>
+                <div class="header-button" id="export-button" onclick="showExportOptions()" style="cursor: pointer; align-items: center; gap: 6px; white-space: nowrap; position: relative;">
+                    <i class="fas fa-download"></i>
+                    <span>Export</span>
+                    <div id="export-dropdown" class="export-dropdown" style="display: none;">
+                        <a href="/api/export-portfolio?format=json" class="export-option">
+                            <i class="fas fa-file-code"></i> JSON
+                        </a>
+                        <a href="/api/export-portfolio?format=csv" class="export-option">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </a>
+                        <a href="/api/export-portfolio?format=json&text=true" class="export-option">
+                            <i class="fas fa-file-alt"></i> Text (for AI)
+                        </a>
+                    </div>
+                </div>
+                <button class="header-icon-button" id="night-mode-toggle" title="Toggle Night Mode">
+                    <i id="night-mode-icon" class="fas fa-moon"></i>
+                </button>
+                <button class="header-button" id="logout-button" onclick="handleLogout()" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="login-section" class="login-section">
+            <h2>Login to Robinhood</h2>
+            <div id="login-message"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+            <p class="login-note">
+                Note: If this is your first time logging in, you'll need to approve this device in your Robinhood app.
+            </p>
+        </div>
+
+        <div id="dashboard" class="dashboard">
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-value">$0.00</div>
+                    <div class="stat-label">Total Portfolio Value</div>
+                    <div id="buying-power" style="margin-top: 8px; font-size: 14px; color: #666666;">
+                        <span>Buying Power: </span>
+                        <span id="buying-power-value" style="font-weight: 600;">$0.00</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <div class="stat-value" id="stock-value" style="margin-bottom: 0;">$0.00</div>
+                        <div id="stock-change" style="font-size: 18px; font-weight: 600;">
+                            <span id="change-value">+0.00%</span>
+                        </div>
+                    </div>
+                    <div class="stat-label">Stock Value</div>
+                    <div id="stock-cost" style="margin-top: 8px; font-size: 14px; color: #666666;">
+                        <span>Cost: </span>
+                        <span id="cost-value" style="font-weight: 600;">$0.00</span>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-right: none;">
+                    <div class="stat-value" id="total-holdings">0</div>
+                    <div class="stat-label">Total Holdings</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px; border-bottom: 1px solid #e5e5e5;">
+                <div style="padding: 24px 0 0 0;">
+                    <div class="chart-title" style="padding: 0 0 24px 0;">Portfolio Summary</div>
+                    <div id="portfolio-summary" style="padding: 0;">
+                        <div class="loading">Loading summary...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Stock Allocation</div>
+                    <canvas id="stock-chart"></canvas>
+                    <div id="top-holdings" style="padding: 20px 0 0 0; border-top: 1px solid #e5e5e5; margin-top: 20px;">
+                        <div class="loading">Loading top holdings...</div>
+                    </div>
+                </div>
+                <div class="chart-card" style="border-right: none;">
+                    <div class="chart-title">Sector Allocation</div>
+                    <canvas id="sector-chart"></canvas>
+                    <div id="sector-breakdown" style="padding: 20px 0 0 0; border-top: 1px solid #e5e5e5; margin-top: 20px;">
+                        <div class="loading">Loading sector breakdown...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="holdings-table">
+                <h2>Holdings Breakdown</h2>
+                <div id="what-if-scenarios-section" class="what-if-section" style="display: none;">
+                    <h3 class="what-if-section-title">
+                        <i class="fas fa-bookmark"></i> Saved What-If Scenarios
+                    </h3>
+                    <div id="what-if-scenarios-list">
+                        <div class="loading">Loading scenarios...</div>
+                    </div>
+                </div>
+                <div id="holdings-content">
+                    <div class="loading">Loading holdings...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Detail Modal -->
+    <div id="stock-modal" class="stock-modal">
+        <div class="stock-modal-content">
+            <div class="stock-modal-header">
+                <h2 id="modal-stock-symbol">-</h2>
+                <button class="stock-modal-close" onclick="closeStockModal()">&times;</button>
+            </div>
+            <div class="stock-modal-body">
+                <div class="stock-info-grid">
+                    <div class="stock-info-item">
+                        <div class="stock-info-label">Company</div>
+                        <div class="stock-info-value" id="modal-company-name">-</div>
+                    </div>
+                    <div class="stock-info-item">
+                        <div class="stock-info-label">Current Price</div>
+                        <div class="stock-info-value" id="modal-current-price">-</div>
+                    </div>
+                    <div class="stock-info-item">
+                        <div class="stock-info-label">Day Change</div>
+                        <div class="stock-info-value" id="modal-day-change">-</div>
+                    </div>
+                    <div class="stock-info-item">
+                        <div class="stock-info-label">After Hours</div>
+                        <div class="stock-info-value" id="modal-after-hours">-</div>
+                    </div>
+                </div>
+                <div class="stock-stats-section">
+                    <h3>Your Position</h3>
+                    <div class="stock-info-grid" id="position-info-grid">
+                        <div class="stock-info-item">
+                            <div class="stock-info-label">Shares</div>
+                            <div class="stock-info-value" id="position-quantity">-</div>
+                        </div>
+                        <div class="stock-info-item">
+                            <div class="stock-info-label">Market Value</div>
+                            <div class="stock-info-value" id="position-market-value">-</div>
+                        </div>
+                        <div class="stock-info-item">
+                            <div class="stock-info-label">Average Cost</div>
+                            <div class="stock-info-value" id="position-avg-price">-</div>
+                        </div>
+                        <div class="stock-info-item">
+                            <div class="stock-info-label">Portfolio Diversity</div>
+                            <div class="stock-info-value" id="position-percentage">-</div>
+                        </div>
+                        <div class="stock-info-item">
+                            <div class="stock-info-label">Today's Return</div>
+                            <div class="stock-info-value" id="position-today-return">-</div>
+                        </div>
+                        <div class="stock-info-item">
+                            <div class="stock-info-label">Total Return</div>
+                            <div class="stock-info-value" id="position-total-return">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stock-stats-section">
+                    <h3>Market Statistics</h3>
+                    <div class="stock-stats-grid" id="stock-stats-grid">
+                        <div class="loading-stats">Loading statistics...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stockChart = null;
+        let sectorChart = null;
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const messageDiv = document.getElementById('login-message');
+            messageDiv.innerHTML = '<div class="loading">Logging in... Please approve device in Robinhood app if prompted.</div>';
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    messageDiv.innerHTML = '<div class="success">Login successful! Loading portfolio...</div>';
+                    updateStatus(true);
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    document.getElementById('search-button').style.display = 'inline-flex';
+                    document.getElementById('what-if-button').style.display = 'inline-flex';
+                    document.getElementById('export-button').style.display = 'inline-flex';
+                    updateLogoutButtonVisibility();
+                    // Small delay to ensure session is established
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await loadPortfolio();
+                    startAutoRefresh();
+                } else {
+                    let errorMsg = data.message || 'Login failed';
+                    if (data.requires_device_approval) {
+                        errorMsg = '<strong>Device Approval Required:</strong><br>' +
+                                   'Please approve this device in your Robinhood app. ' +
+                                   'You should receive a notification. After approving, click Login again.';
+                    }
+                    messageDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+
+        async function loadPortfolio() {
+            const holdingsContent = document.getElementById('holdings-content');
+            holdingsContent.innerHTML = '<div class="loading">Loading portfolio data...</div>';
+            
+            try {
+                const response = await fetch('/api/portfolio');
+                const result = await response.json();
+
+                if (result.success) {
+                    window.currentPortfolioData = result.data; // Store globally for theme toggle
+                    displayPortfolio(result.data);
+                    // Load what-if scenarios after a short delay to ensure portfolio is displayed
+                    setTimeout(async () => {
+                        await loadWhatIfScenarios();
+                    }, 500);
+                } else {
+                    let errorMsg = result.message || 'Error loading portfolio';
+                    
+                    // If login is required, show login form
+                    if (result.requires_login || response.status === 401) {
+                        errorMsg = result.message || 'Not logged in. Please login again.';
+                        updateStatus(false);
+                        document.getElementById('login-section').style.display = 'block';
+                        document.getElementById('dashboard').style.display = 'none';
+                        updateLogoutButtonVisibility();
+                        document.getElementById('login-message').innerHTML = 
+                            `<div class="error">${errorMsg}</div>`;
+                        // Clear form
+                        document.getElementById('username').value = '';
+                        document.getElementById('password').value = '';
+                        document.getElementById('mfa_code').value = '';
+                    } else {
+                        holdingsContent.innerHTML = 
+                            `<div class="error">Error loading portfolio: ${errorMsg}</div>`;
+                    }
+                }
+            } catch (error) {
+                holdingsContent.innerHTML = 
+                    `<div class="error">Network error: ${error.message}. Please try again.</div>`;
+            }
+        }
+
+        // Auto-refresh variables
+        let portfolioRefreshInterval = null;
+        const REFRESH_INTERVAL_MS = 30000; // 30 seconds
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            // Clear any existing interval
+            stopAutoRefresh();
+            
+            // Only refresh if tab is visible
+            if (!document.hidden) {
+                portfolioRefreshInterval = setInterval(async () => {
+                    if (!document.hidden) {
+                        await loadPortfolio();
+                    }
+                }, REFRESH_INTERVAL_MS);
+            }
+        }
+
+        // Stop auto-refresh
+        function stopAutoRefresh() {
+            if (portfolioRefreshInterval) {
+                clearInterval(portfolioRefreshInterval);
+                portfolioRefreshInterval = null;
+            }
+        }
+
+        // Pause refresh when tab is hidden, resume when visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                // Restart refresh and immediately load fresh data
+                startAutoRefresh();
+                loadPortfolio();
+            }
+        });
+
+        // Check login status on page load
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/check-login');
+                const result = await response.json();
+                
+                if (result.success && result.logged_in) {
+                    updateStatus(true);
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    document.getElementById('search-button').style.display = 'inline-flex';
+                    document.getElementById('what-if-button').style.display = 'inline-flex';
+                    document.getElementById('export-button').style.display = 'inline-flex';
+                    updateLogoutButtonVisibility();
+                    await loadPortfolio();
+                    startAutoRefresh();
+                } else {
+                    updateStatus(false);
+                    document.getElementById('login-section').style.display = 'block';
+                    document.getElementById('dashboard').style.display = 'none';
+                    document.getElementById('search-button').style.display = 'none';
+                    document.getElementById('what-if-button').style.display = 'none';
+                    document.getElementById('export-button').style.display = 'none';
+                    updateLogoutButtonVisibility();
+                    stopAutoRefresh();
+                    // Clear any error messages
+                    document.getElementById('login-message').innerHTML = '';
+                    // Clear form fields
+                    document.getElementById('username').value = '';
+                    document.getElementById('password').value = '';
+                }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+                updateStatus(false);
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                updateLogoutButtonVisibility();
+                stopAutoRefresh();
+            }
+        }
+
+        // Hide navigation buttons initially until login status is checked
+        document.getElementById('search-button').style.display = 'none';
+        document.getElementById('what-if-button').style.display = 'none';
+        document.getElementById('export-button').style.display = 'none';
+
+        // Check login status when page loads
+        checkLoginStatus();
+
+        // Night Mode Toggle
+        function initNightMode() {
+            const nightMode = localStorage.getItem('nightMode') === 'true';
+            const iconContainer = document.getElementById('night-mode-icon');
+            if (nightMode) {
+                document.body.classList.add('night-mode');
+                iconContainer.className = 'fas fa-sun';
+            } else {
+                document.body.classList.remove('night-mode');
+                iconContainer.className = 'fas fa-moon';
+            }
+        }
+
+        document.getElementById('night-mode-toggle').addEventListener('click', function() {
+            const isNightMode = document.body.classList.contains('night-mode');
+            const iconContainer = document.getElementById('night-mode-icon');
+            if (isNightMode) {
+                document.body.classList.remove('night-mode');
+                localStorage.setItem('nightMode', 'false');
+                iconContainer.className = 'fas fa-moon';
+            } else {
+                document.body.classList.add('night-mode');
+                localStorage.setItem('nightMode', 'true');
+                iconContainer.className = 'fas fa-sun';
+            }
+            // Update chart colors if chart exists
+            const newIsNightMode = document.body.classList.contains('night-mode');
+            if (stockChart && window.currentHoldings) {
+                stockChart.options.plugins.legend.labels.color = newIsNightMode ? '#e0e0e0' : '#000000';
+                stockChart.options.plugins.tooltip.backgroundColor = newIsNightMode ? 'rgba(30, 30, 30, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+                stockChart.options.plugins.tooltip.titleColor = newIsNightMode ? '#e0e0e0' : '#ffffff';
+                stockChart.options.plugins.tooltip.bodyColor = newIsNightMode ? '#e0e0e0' : '#ffffff';
+                stockChart.update();
+            }
+            // Update sector chart legend colors
+            if (sectorChart) {
+                sectorChart.options.plugins.legend.labels.color = newIsNightMode ? '#e0e0e0' : '#000000';
+                sectorChart.options.plugins.tooltip.backgroundColor = newIsNightMode ? 'rgba(30, 30, 30, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+                sectorChart.options.plugins.tooltip.titleColor = newIsNightMode ? '#e0e0e0' : '#ffffff';
+                sectorChart.options.plugins.tooltip.bodyColor = newIsNightMode ? '#e0e0e0' : '#ffffff';
+                sectorChart.update();
+            }
+            // Re-render portfolio summary and top holdings
+            if (window.currentPortfolioData) {
+                displayPortfolioSummary(window.currentPortfolioData);
+            }
+            // Re-render sector breakdown
+            if (window.currentSectorData) {
+                const { sectorHoldings, sectorData, sectorPercentages, sectorColorMap, sectors } = window.currentSectorData;
+                displaySectorBreakdown(sectorHoldings, sectorData, sectorPercentages, sectorColorMap, sectors);
+            }
+        });
+
+        // Initialize night mode on page load
+        initNightMode();
+
+        // Show/hide logout button based on login status
+        function updateLogoutButtonVisibility() {
+            const logoutButton = document.getElementById('logout-button');
+            const dashboard = document.getElementById('dashboard');
+            if (dashboard.style.display !== 'none') {
+                logoutButton.style.display = 'flex';
+            } else {
+                logoutButton.style.display = 'none';
+            }
+        }
+
+        function handleLogout() {
+            logout();
+        }
+
+        // Export dropdown functionality
+        function showExportOptions() {
+            const dropdown = document.getElementById('export-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const exportButton = document.getElementById('export-button');
+            const dropdown = document.getElementById('export-dropdown');
+            if (exportButton && dropdown && !exportButton.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        function displayPortfolio(data) {
+            // Calculate totals
+            let totalGainLoss = 0;
+            let totalCost = 0;
+            
+            data.holdings.forEach(holding => {
+                totalGainLoss += holding.gain_loss || 0;
+                totalCost += (holding.average_buy_price || 0) * (holding.quantity || 0);
+            });
+            
+            // Total cost is just for stocks, but gain/loss percentage should be based on stock cost
+            const totalGainLossPercent = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
+            
+            // Get cash and buying power
+            const cash = data.cash || 0;
+            const buyingPower = data.buying_power || 0;
+            const stockValue = data.stock_value || (data.total_value - Math.max(cash, buyingPower));
+            
+            // Update stats - Total Portfolio Value (stocks + buying power)
+            document.getElementById('total-value').textContent = 
+                `$${data.total_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('buying-power-value').textContent = 
+                `$${buyingPower.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            
+            // Update stats - Stock Value (stocks only)
+            document.getElementById('stock-value').textContent = 
+                `$${stockValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('cost-value').textContent = 
+                `$${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            
+            // Update stock percentage change
+            const changeElement = document.getElementById('change-value');
+            changeElement.textContent = `${totalGainLossPercent >= 0 ? '+' : ''}${totalGainLossPercent.toFixed(2)}%`;
+            changeElement.className = totalGainLossPercent >= 0 ? 'positive' : 'negative';
+            changeElement.style.color = totalGainLossPercent >= 0 ? '#00C805' : '#d32f2f';
+            
+            // Update total holdings
+            document.getElementById('total-holdings').textContent = data.holdings.length;
+            
+            // Display portfolio summary
+            displayPortfolioSummary(data);
+            
+            // Create stock allocation chart
+            const stockCtx = document.getElementById('stock-chart').getContext('2d');
+            if (stockChart) stockChart.destroy();
+            
+            const isNightMode = document.body.classList.contains('night-mode');
+            stockChart = new Chart(stockCtx, {
+                type: 'pie',
+                data: {
+                    labels: data.holdings.map(h => h.symbol),
+                    datasets: [{
+                        data: data.holdings.map(h => h.percentage),
+                        backgroundColor: generateColors(data.holdings.length)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 12,
+                                font: {
+                                    size: 12
+                                },
+                                color: isNightMode ? '#e0e0e0' : '#000000'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: isNightMode ? 'rgba(30, 30, 30, 0.95)' : 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            titleColor: isNightMode ? '#e0e0e0' : '#ffffff',
+                            bodyColor: isNightMode ? '#e0e0e0' : '#ffffff',
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    return `${label}: ${value.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Create sector allocation chart
+            const sectorCtx = document.getElementById('sector-chart').getContext('2d');
+            if (sectorChart) sectorChart.destroy();
+            
+            // Aggregate holdings by sector
+            const sectorData = {};
+            const sectorHoldings = {}; // Track which stocks belong to each sector
+            
+            data.holdings.forEach(holding => {
+                const sector = holding.sector || 'Unknown';
+                if (!sectorData[sector]) {
+                    sectorData[sector] = 0;
+                    sectorHoldings[sector] = [];
+                }
+                sectorData[sector] += holding.market_value || 0;
+                sectorHoldings[sector].push(holding);
+            });
+            
+            // Sort holdings within each sector by market value
+            Object.keys(sectorHoldings).forEach(sector => {
+                sectorHoldings[sector].sort((a, b) => (b.market_value || 0) - (a.market_value || 0));
+            });
+            
+            // Convert to arrays for chart
+            const sectors = Object.keys(sectorData);
+            const sectorValues = sectors.map(sector => sectorData[sector]);
+            const totalSectorValue = sectorValues.reduce((sum, val) => sum + val, 0);
+            const sectorPercentages = sectorValues.map(val => totalSectorValue > 0 ? (val / totalSectorValue) * 100 : 0);
+            
+            // Generate colors based on chart order and create mapping
+            const sectorColors = generateColors(sectors.length);
+            const sectorColorMap = {};
+            sectors.forEach((sector, index) => {
+                sectorColorMap[sector] = sectorColors[index];
+            });
+            
+            sectorChart = new Chart(sectorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: sectors,
+                    datasets: [{
+                        data: sectorPercentages,
+                        backgroundColor: sectorColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 12,
+                                font: {
+                                    size: 12
+                                },
+                                color: isNightMode ? '#e0e0e0' : '#000000'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: isNightMode ? 'rgba(30, 30, 30, 0.95)' : 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            titleColor: isNightMode ? '#e0e0e0' : '#ffffff',
+                            bodyColor: isNightMode ? '#e0e0e0' : '#ffffff',
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const sectorValue = sectorValues[context.dataIndex] || 0;
+                                    return [
+                                        `${label}: ${value.toFixed(2)}%`,
+                                        `Value: $${sectorValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Display sector breakdown with stocks (pass color map to match chart colors)
+            displaySectorBreakdown(sectorHoldings, sectorData, sectorPercentages, sectorColorMap, sectors);
+            
+            // Store sector data globally for theme toggle refresh
+            window.currentSectorData = {
+                sectorHoldings,
+                sectorData,
+                sectorPercentages,
+                sectorColorMap,
+                sectors
+            };
+
+            // Store holdings for sorting and modal access
+            let holdingsData = [...data.holdings];
+            window.currentHoldings = holdingsData; // Store globally for modal access
+            let sortColumn = null;
+            let sortDirection = 'asc';
+
+            // Sort function
+            function sortHoldings(column, direction) {
+                holdingsData.sort((a, b) => {
+                    let aVal, bVal;
+                    
+                    switch(column) {
+                        case 'symbol':
+                            aVal = a.symbol || '';
+                            bVal = b.symbol || '';
+                            return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                        case 'company':
+                            aVal = (a.company_name || a.symbol || '').toLowerCase();
+                            bVal = (b.company_name || b.symbol || '').toLowerCase();
+                            return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                        case 'sector':
+                            aVal = (a.sector || 'N/A').toLowerCase();
+                            bVal = (b.sector || 'N/A').toLowerCase();
+                            return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                        case 'quantity':
+                            aVal = a.quantity || 0;
+                            bVal = b.quantity || 0;
+                            break;
+                        case 'avg_buy_price':
+                            aVal = a.average_buy_price || 0;
+                            bVal = b.average_buy_price || 0;
+                            break;
+                        case 'current_price':
+                            aVal = a.current_price || 0;
+                            bVal = b.current_price || 0;
+                            break;
+                        case 'day_change':
+                            aVal = a.day_change || 0;
+                            bVal = b.day_change || 0;
+                            break;
+                        case 'cost_basis':
+                            aVal = (a.average_buy_price || 0) * (a.quantity || 0);
+                            bVal = (b.average_buy_price || 0) * (b.quantity || 0);
+                            break;
+                        case 'market_value':
+                            aVal = a.market_value || 0;
+                            bVal = b.market_value || 0;
+                            break;
+                        case 'gain_loss':
+                            aVal = a.gain_loss || 0;
+                            bVal = b.gain_loss || 0;
+                            break;
+                        case 'percentage':
+                            aVal = a.percentage || 0;
+                            bVal = b.percentage || 0;
+                            break;
+                        default:
+                            return 0;
+                    }
+                    
+                    if (typeof aVal === 'number' && typeof bVal === 'number') {
+                        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    }
+                    return 0;
+                });
+            }
+
+            // Function to render table rows
+            function renderTableRows(holdings) {
+                let rowsHTML = '';
+                holdings.forEach((holding, index) => {
+                    const dayChangeClass = holding.day_change >= 0 ? 'positive' : 'negative';
+                    const gainLossClass = holding.gain_loss >= 0 ? 'positive' : 'negative';
+                    const dayChangeSign = holding.day_change >= 0 ? '+' : '';
+                    const gainLossSign = holding.gain_loss >= 0 ? '+' : '';
+                    
+                    // Calculate total cost basis
+                    const costBasis = (holding.average_buy_price || 0) * (holding.quantity || 0);
+                    
+                    // Determine price box color based on day change (current price vs previous day's close)
+                    let priceBoxClass = 'neutral';
+                    if (holding.day_change > 0) {
+                        priceBoxClass = 'up';
+                    } else if (holding.day_change < 0) {
+                        priceBoxClass = 'down';
+                    }
+                    
+                    rowsHTML += `
+                        <tr onclick="showStockDetailsFromIndex(${index})" data-holding-index="${index}">
+                            <td>
+                                <strong class="table-symbol" style="font-size: 15px;">${holding.symbol}</strong>
+                                <a href="https://www.perplexity.ai/finance/${holding.symbol}" target="_blank" onclick="event.stopPropagation();" class="perplexity-link" title="View on Perplexity Finance">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </td>
+                            <td class="table-company-name">${holding.company_name || holding.symbol}</td>
+                            <td class="table-company-name">${holding.sector || 'N/A'}</td>
+                            <td>
+                                <span class="price-box ${priceBoxClass}">
+                                    $${(holding.current_price || 0).toFixed(2)}
+                                </span>
+                            </td>
+                            <td class="${dayChangeClass}" style="font-weight: 500;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <span>${dayChangeSign}$${Math.abs(holding.day_change || 0).toFixed(2)}</span>
+                                    <span style="font-size: 12px; opacity: 0.8;">${dayChangeSign}${(holding.day_change_percent || 0).toFixed(2)}%</span>
+                                </div>
+                            </td>
+                            <td>${holding.quantity.toFixed(4)}</td>
+                            <td>$${(holding.average_buy_price || 0).toFixed(2)}</td>
+                            <td class="table-cost-basis">$${costBasis.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td style="font-weight: 600;">$${(holding.market_value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td class="${gainLossClass}" style="font-weight: 500;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <span>${gainLossSign}$${Math.abs(holding.gain_loss || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span style="font-size: 12px; opacity: 0.8;">${gainLossSign}${(holding.gain_loss_percent || 0).toFixed(2)}%</span>
+                                </div>
+                            </td>
+                            <td class="percentage table-percentage" style="font-weight: 600;">${(holding.percentage || 0).toFixed(2)}%</td>
+                        </tr>
+                    `;
+                });
+                return rowsHTML;
+            }
+
+            // Display holdings table
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="symbol" title="Stock ticker symbol">Symbol</th>
+                            <th class="sortable" data-column="company" title="Company name">Company</th>
+                            <th class="sortable" data-column="sector" title="Industry sector">Sector</th>
+                            <th class="sortable" data-column="current_price" title="Current market price per share">Current Price</th>
+                            <th class="sortable" data-column="day_change" title="Price change today (dollar and percentage)">Day Change</th>
+                            <th class="sortable" data-column="quantity" title="Number of shares owned">Shares</th>
+                            <th class="sortable" data-column="avg_buy_price" title="Average price paid per share">Avg Buy Price</th>
+                            <th class="sortable" data-column="cost_basis" title="Total amount invested (quantity × avg buy price)">Cost Basis</th>
+                            <th class="sortable" data-column="market_value" title="Current total value (quantity × current price)">Market Value</th>
+                            <th class="sortable" data-column="gain_loss" title="Total gain or loss (market value - cost basis)">Gain/Loss</th>
+                            <th class="sortable" data-column="percentage" title="Percentage of total portfolio value">% of Portfolio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${renderTableRows(holdingsData)}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('holdings-content').innerHTML = tableHTML;
+
+            // Add click handlers for sorting
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.addEventListener('click', function() {
+                    const column = this.getAttribute('data-column');
+                    
+                    // Remove sort classes from all headers
+                    document.querySelectorAll('th.sortable').forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                    });
+                    
+                    // Toggle sort direction if clicking same column
+                    if (sortColumn === column) {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortColumn = column;
+                        sortDirection = 'asc';
+                    }
+                    
+                    // Add sort class to current header
+                    this.classList.add(sortDirection);
+                    
+                    // Re-sort and re-render
+                    sortHoldings(column, sortDirection);
+                    window.currentHoldings = holdingsData; // Update global holdings after sorting
+                    
+                    // Update table body
+                    const tbody = document.querySelector('#holdings-content tbody');
+                    if (tbody) {
+                        tbody.innerHTML = renderTableRows(holdingsData);
+                    }
+                });
+            });
+        }
+
+        function displayPortfolioSummary(data) {
+            const summaryDiv = document.getElementById('portfolio-summary');
+            
+            // Calculate totals
+            let totalGainLoss = 0;
+            let totalCost = 0;
+            let totalDayChange = 0;
+            
+            data.holdings.forEach(holding => {
+                totalGainLoss += holding.gain_loss || 0;
+                totalCost += (holding.average_buy_price || 0) * (holding.quantity || 0);
+                totalDayChange += (holding.day_change || 0) * (holding.quantity || 0);
+            });
+            
+            const totalGainLossPercent = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
+            const totalDayChangePercent = data.stock_value > 0 ? (totalDayChange / data.stock_value) * 100 : 0;
+            const avgGainLossPercent = data.holdings.length > 0 
+                ? data.holdings.reduce((sum, h) => sum + (h.gain_loss_percent || 0), 0) / data.holdings.length 
+                : 0;
+            
+            // Calculate additional stats
+            const totalHoldings = data.holdings.length;
+            const winningPositions = data.holdings.filter(h => (h.gain_loss || 0) > 0).length;
+            const losingPositions = data.holdings.filter(h => (h.gain_loss || 0) < 0).length;
+            const winRate = totalHoldings > 0 ? (winningPositions / totalHoldings) * 100 : 0;
+            
+            // Top gainer and loser today (by day change percent)
+            const topGainerToday = data.holdings.length > 0 
+                ? data.holdings.reduce((max, h) => (h.day_change_percent || 0) > (max.day_change_percent || 0) ? h : max, data.holdings[0])
+                : null;
+            const topLoserToday = data.holdings.length > 0
+                ? data.holdings.reduce((min, h) => (h.day_change_percent || 0) < (min.day_change_percent || 0) ? h : min, data.holdings[0])
+                : null;
+            
+            // Largest gainer and loser (overall)
+            const largestGainer = data.holdings.length > 0 
+                ? data.holdings.reduce((max, h) => (h.gain_loss || 0) > (max.gain_loss || 0) ? h : max, data.holdings[0])
+                : null;
+            const largestLoser = data.holdings.length > 0
+                ? data.holdings.reduce((min, h) => (h.gain_loss || 0) < (min.gain_loss || 0) ? h : min, data.holdings[0])
+                : null;
+            
+            // Largest position by market value
+            const largestPosition = data.holdings.length > 0
+                ? data.holdings.reduce((max, h) => (h.market_value || 0) > (max.market_value || 0) ? h : max, data.holdings[0])
+                : null;
+            
+            // Portfolio concentration (top holding percentage)
+            const topHoldingPercentage = largestPosition && data.stock_value > 0
+                ? (largestPosition.market_value / data.stock_value) * 100
+                : 0;
+            
+            // Average position size
+            const avgPositionSize = totalHoldings > 0 
+                ? data.holdings.reduce((sum, h) => sum + (h.market_value || 0), 0) / totalHoldings 
+                : 0;
+            
+            // Number of unique sectors
+            const uniqueSectors = new Set(data.holdings.map(h => h.sector).filter(s => s && s !== 'N/A' && s !== 'Unknown')).size;
+            
+            // Cash percentage of portfolio
+            const cashPercentage = data.total_value > 0 ? (data.cash / data.total_value) * 100 : 0;
+            
+            // Create horizontal stats layout
+            const isNightMode = document.body.classList.contains('night-mode');
+            const textColor = isNightMode ? '#e0e0e0' : '#000000';
+            const labelColor = isNightMode ? '#999999' : '#666666';
+            const borderColor = isNightMode ? '#333333' : '#e5e5e5';
+            
+            let summaryHTML = `
+                <div style="display: flex; align-items: stretch; flex-wrap: nowrap; gap: 0; border-top: 1px solid ${borderColor}; width: 100%;">
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Total Gain/Loss</div>
+                        <div style="font-size: 24px; font-weight: 600; color: ${totalGainLoss >= 0 ? '#00C805' : '#d32f2f'}; margin-bottom: 4px;">
+                        ${totalGainLoss >= 0 ? '+' : ''}$${totalGainLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                        <div style="font-size: 13px; color: ${totalGainLossPercent >= 0 ? '#00C805' : '#d32f2f'};">
+                        ${totalGainLossPercent >= 0 ? '+' : ''}${totalGainLossPercent.toFixed(2)}%
+                    </div>
+                </div>
+                
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Today's Change</div>
+                        <div style="font-size: 24px; font-weight: 600; color: ${totalDayChange >= 0 ? '#00C805' : '#d32f2f'}; margin-bottom: 4px;">
+                        ${totalDayChange >= 0 ? '+' : ''}$${totalDayChange.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                        <div style="font-size: 13px; color: ${totalDayChangePercent >= 0 ? '#00C805' : '#d32f2f'};">
+                        ${totalDayChangePercent >= 0 ? '+' : ''}${totalDayChangePercent.toFixed(2)}%
+                    </div>
+                </div>
+                
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Gainer Today</div>
+                        ${topGainerToday ? `
+                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                                ${topGainerToday.symbol}
+                            </div>
+                            <div style="font-size: 13px; color: ${topGainerToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
+                                ${topGainerToday.day_change_percent >= 0 ? '+' : ''}${topGainerToday.day_change_percent.toFixed(2)}%
+                            </div>
+                        ` : `
+                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
+                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                        `}
+                    </div>
+                    
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Loser Today</div>
+                        ${topLoserToday ? `
+                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                                ${topLoserToday.symbol}
+                            </div>
+                            <div style="font-size: 13px; color: ${topLoserToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
+                                ${topLoserToday.day_change_percent >= 0 ? '+' : ''}${topLoserToday.day_change_percent.toFixed(2)}%
+                            </div>
+                        ` : `
+                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
+                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                        `}
+                    </div>
+                    
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Avg Return</div>
+                        <div style="font-size: 24px; font-weight: 600; color: ${avgGainLossPercent >= 0 ? '#00C805' : '#d32f2f'}; margin-bottom: 4px;">
+                            ${avgGainLossPercent >= 0 ? '+' : ''}${avgGainLossPercent.toFixed(2)}%
+                        </div>
+                        <div style="font-size: 13px; color: ${labelColor};">
+                            Per Holding
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Gainer</div>
+                        ${largestGainer ? `
+                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                                ${largestGainer.symbol}
+                            </div>
+                            <div style="font-size: 13px; color: #00C805;">
+                                +${largestGainer.gain_loss_percent.toFixed(2)}%
+                            </div>
+                        ` : `
+                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
+                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                        `}
+                    </div>
+                    
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Loser</div>
+                        ${largestLoser ? `
+                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                                ${largestLoser.symbol}
+                            </div>
+                            <div style="font-size: 13px; color: #d32f2f;">
+                                ${largestLoser.gain_loss_percent.toFixed(2)}%
+                            </div>
+                        ` : `
+                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
+                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                        `}
+                    </div>
+                    
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Largest Position</div>
+                        ${largestPosition ? `
+                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                                ${largestPosition.symbol}
+                            </div>
+                            <div style="font-size: 13px; color: ${labelColor};">
+                                ${topHoldingPercentage.toFixed(1)}% of portfolio
+                            </div>
+                        ` : `
+                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
+                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                        `}
+                    </div>
+                    
+                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px;">
+                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Avg Position Size</div>
+                        <div style="font-size: 24px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                            $${avgPositionSize.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </div>
+                        <div style="font-size: 13px; color: ${labelColor};">
+                            Per Holding
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            summaryDiv.innerHTML = summaryHTML;
+            
+            // Display top holdings below stock chart
+            displayTopHoldings(data);
+        }
+        
+        function displayTopHoldings(data) {
+            const topHoldingsDiv = document.getElementById('top-holdings');
+            const topHoldings = data.holdings.slice(0, 5);
+            
+            if (topHoldings.length === 0) {
+                topHoldingsDiv.innerHTML = '<div style="text-align: center; color: #666666; padding: 20px;">No holdings to display</div>';
+                return;
+            }
+            
+            const isNightMode = document.body.classList.contains('night-mode');
+            const textColor = isNightMode ? '#e0e0e0' : '#000000';
+            const labelColor = isNightMode ? '#999999' : '#666666';
+            const borderColor = isNightMode ? '#333333' : '#f0f0f0';
+            
+            let holdingsHTML = `
+                <div style="font-size: 12px; color: ${labelColor}; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Top 5 Holdings</div>
+            `;
+            
+            topHoldings.forEach((holding, index) => {
+                const gainLossClass = holding.gain_loss >= 0 ? 'positive' : 'negative';
+                const gainLossSign = holding.gain_loss >= 0 ? '+' : '';
+                const dayChangeClass = holding.day_change >= 0 ? 'positive' : 'negative';
+                const dayChangeSign = holding.day_change >= 0 ? '+' : '';
+                
+                holdingsHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 8px 0; ${index < topHoldings.length - 1 ? `border-bottom: 1px solid ${borderColor};` : ''}">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; margin-bottom: 2px; color: ${textColor};">
+                                ${holding.symbol}
+                                <span style="font-size: 12px; color: ${labelColor}; font-weight: 400; margin-left: 6px;">
+                                    ${(holding.percentage || 0).toFixed(1)}%
+                                </span>
+                            </div>
+                            <div style="font-size: 12px; color: ${labelColor};">${holding.company_name || holding.symbol}</div>
+                        </div>
+                        <div style="text-align: right; margin-right: 16px;">
+                            <div style="font-weight: 600; margin-bottom: 2px; color: ${textColor};">$${holding.market_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div style="font-size: 11px; color: ${gainLossClass === 'positive' ? '#00C805' : '#d32f2f'};">
+                                ${gainLossSign}${holding.gain_loss_percent.toFixed(2)}%
+                            </div>
+                        </div>
+                        <div style="text-align: right; min-width: 80px;">
+                            <div style="font-size: 12px; font-weight: 500; margin-bottom: 2px; color: ${dayChangeClass === 'positive' ? '#00C805' : '#d32f2f'};">
+                                ${dayChangeSign}${holding.day_change_percent.toFixed(2)}%
+                            </div>
+                            <div style="font-size: 11px; color: ${labelColor};">
+                                Today
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            topHoldingsDiv.innerHTML = holdingsHTML;
+        }
+        
+        function displaySectorBreakdown(sectorHoldings, sectorData, sectorPercentages, sectorColorMap, chartSectors) {
+            const breakdownDiv = document.getElementById('sector-breakdown');
+            
+            if (Object.keys(sectorHoldings).length === 0) {
+                breakdownDiv.innerHTML = '<div style="text-align: center; color: #666666; padding: 20px;">No sector data available</div>';
+                return;
+            }
+            
+            const isNightMode = document.body.classList.contains('night-mode');
+            const textColor = isNightMode ? '#e0e0e0' : '#000000';
+            const labelColor = isNightMode ? '#999999' : '#666666';
+            const borderColor = isNightMode ? '#333333' : '#e5e5e5';
+            const bgColor = isNightMode ? '#2a2a2a' : '#f9f9f9';
+            
+            // Sort sectors by value (descending)
+            const sortedSectors = Object.keys(sectorData).sort((a, b) => sectorData[b] - sectorData[a]);
+            
+            let breakdownHTML = `
+                <div style="font-size: 12px; color: ${labelColor}; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Sector Breakdown</div>
+            `;
+            
+            sortedSectors.forEach((sector, sectorIndex) => {
+                const holdings = sectorHoldings[sector];
+                const sectorValue = sectorData[sector];
+                const sectorPercent = sectorPercentages[chartSectors.indexOf(sector)];
+                const sectorColor = sectorColorMap[sector] || '#999999'; // Use color from chart mapping
+                
+                breakdownHTML += `
+                    <div style="margin-bottom: 20px; ${sectorIndex < sortedSectors.length - 1 ? `padding-bottom: 20px; border-bottom: 1px solid ${borderColor};` : ''}">
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <div style="width: 12px; height: 12px; border-radius: 2px; background: ${sectorColor}; margin-right: 8px; flex-shrink: 0;"></div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: ${textColor}; margin-bottom: 2px;">
+                                    ${sector}
+                                </div>
+                                <div style="font-size: 12px; color: ${labelColor};">
+                                    ${sectorPercent.toFixed(2)}% • $${sectorValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • ${holdings.length} ${holdings.length === 1 ? 'stock' : 'stocks'}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: 20px;">
+                `;
+                
+                holdings.forEach(holding => {
+                    const gainLossClass = holding.gain_loss >= 0 ? 'positive' : 'negative';
+                    const gainLossSign = holding.gain_loss >= 0 ? '+' : '';
+                    breakdownHTML += `
+                        <div style="display: inline-flex; align-items: center; padding: 6px 12px; background: ${bgColor}; border-radius: 4px; border: 1px solid ${borderColor};">
+                            <span style="font-weight: 600; color: ${textColor}; margin-right: 6px;">${holding.symbol}</span>
+                            <span style="font-size: 11px; color: ${labelColor}; margin-right: 6px;">
+                                ${(holding.percentage || 0).toFixed(1)}%
+                            </span>
+                            <span style="font-size: 11px; color: ${gainLossClass === 'positive' ? '#00C805' : '#d32f2f'};">
+                                ${gainLossSign}${holding.gain_loss_percent.toFixed(1)}%
+                            </span>
+                        </div>
+                    `;
+                });
+                
+                breakdownHTML += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            breakdownDiv.innerHTML = breakdownHTML;
+        }
+
+        function generateColors(count) {
+            // Diverse color palette inspired by modern financial apps
+            const baseColors = [
+                '#00C805', // Robinhood green (for positive/primary)
+                '#0066CC', // Blue
+                '#FF6B35', // Orange
+                '#9B59B6', // Purple
+                '#E74C3C', // Red
+                '#3498DB', // Light blue
+                '#F39C12', // Gold
+                '#1ABC9C', // Teal
+                '#E67E22', // Dark orange
+                '#34495E', // Dark blue-gray
+                '#16A085', // Green-teal
+                '#D35400', // Dark orange
+                '#2980B9', // Blue
+                '#8E44AD', // Purple
+                '#C0392B', // Dark red
+            ];
+            
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                if (i < baseColors.length) {
+                    colors.push(baseColors[i]);
+                } else {
+                    // Generate varied colors for additional items
+                    const hue = (i * 137.508) % 360; // Golden angle for good distribution
+                    const saturation = 60 + (i % 3) * 10;
+                    const lightness = 45 + (i % 3) * 10;
+                    colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+                }
+            }
+            return colors;
+        }
+
+        function updateStatus(connected) {
+            const indicator = document.querySelector('.status-indicator');
+            const text = document.getElementById('status-text');
+            if (connected) {
+                indicator.className = 'status-indicator status-connected';
+                text.textContent = 'Connected';
+            } else {
+                indicator.className = 'status-indicator status-disconnected';
+                text.textContent = 'Not connected';
+            }
+        }
+
+        async function logout() {
+            stopAutoRefresh();
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                updateStatus(false);
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                document.getElementById('search-button').style.display = 'none';
+                document.getElementById('what-if-button').style.display = 'none';
+                updateLogoutButtonVisibility();
+                document.getElementById('login-message').innerHTML = '';
+                if (stockChart) stockChart.destroy();
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Still update UI even if logout request fails
+                updateStatus(false);
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                document.getElementById('search-button').style.display = 'none';
+                document.getElementById('what-if-button').style.display = 'none';
+                updateLogoutButtonVisibility();
+            }
+        }
+
+
+        function showStockDetailsFromIndex(index) {
+            if (!window.currentHoldings || !window.currentHoldings[index]) {
+                console.error('Holding not found at index:', index);
+                return;
+            }
+            showStockDetails(window.currentHoldings[index]);
+        }
+
+        function showStockDetails(holding) {
+            const modal = document.getElementById('stock-modal');
+            const dayChangeSign = (holding.day_change || 0) >= 0 ? '+' : '';
+            const gainLossSign = (holding.gain_loss || 0) >= 0 ? '+' : '';
+            const costBasis = (holding.average_buy_price || 0) * (holding.quantity || 0);
+            
+            // Populate top section (basic stock info)
+            document.getElementById('modal-stock-symbol').textContent = holding.symbol || '-';
+            document.getElementById('modal-company-name').textContent = holding.company_name || holding.symbol || '-';
+            document.getElementById('modal-current-price').textContent = `$${(holding.current_price || 0).toFixed(2)}`;
+            
+            // Day change with color
+            const dayChangeEl = document.getElementById('modal-day-change');
+            dayChangeEl.textContent = `${dayChangeSign}$${Math.abs(holding.day_change || 0).toFixed(2)} (${dayChangeSign}${(holding.day_change_percent || 0).toFixed(2)}%)`;
+            dayChangeEl.className = 'stock-info-value ' + ((holding.day_change || 0) >= 0 ? 'positive' : 'negative');
+            
+            // After hours will be populated by loadStockStatistics
+            document.getElementById('modal-after-hours').textContent = '-';
+            document.getElementById('modal-after-hours').className = 'stock-info-value';
+            
+            // Populate Your Position section (in order: Shares, Market Value, Average Cost, Portfolio Diversity, Today's Return, Total Return)
+            document.getElementById('position-quantity').textContent = (holding.quantity || 0).toFixed(4);
+            document.getElementById('position-market-value').textContent = `$${(holding.market_value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('position-avg-price').textContent = `$${(holding.average_buy_price || 0).toFixed(2)}`;
+            document.getElementById('position-percentage').textContent = `${(holding.percentage || 0).toFixed(2)}%`;
+            
+            // Today's Return (day change * quantity)
+            const todayReturn = (holding.day_change || 0) * (holding.quantity || 0);
+            const todayReturnSign = todayReturn >= 0 ? '+' : '';
+            const todayReturnEl = document.getElementById('position-today-return');
+            todayReturnEl.textContent = `${todayReturnSign}$${Math.abs(todayReturn).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${dayChangeSign}${(holding.day_change_percent || 0).toFixed(2)}%)`;
+            todayReturnEl.className = 'stock-info-value ' + (todayReturn >= 0 ? 'positive' : 'negative');
+            
+            // Total Return (gain/loss)
+            const totalReturnEl = document.getElementById('position-total-return');
+            totalReturnEl.textContent = `${gainLossSign}$${Math.abs(holding.gain_loss || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${gainLossSign}${(holding.gain_loss_percent || 0).toFixed(2)}%)`;
+            totalReturnEl.className = 'stock-info-value ' + ((holding.gain_loss || 0) >= 0 ? 'positive' : 'negative');
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Load stock statistics
+            loadStockStatistics(holding.symbol);
+        }
+
+        async function loadStockStatistics(symbol) {
+            const statsGrid = document.getElementById('stock-stats-grid');
+            statsGrid.innerHTML = '<div class="loading-stats">Loading statistics...</div>';
+            
+            try {
+                const response = await fetch(`/api/stock-details/${symbol}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const stats = result.data;
+                    let statsHTML = '';
+                    
+                    // Format functions
+                    const formatNumber = (num) => {
+                        if (num === null || num === undefined) return 'N/A';
+                        if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+                        if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+                        if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+                        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    };
+                    
+                    const formatPrice = (num) => {
+                        if (num === null || num === undefined) return 'N/A';
+                        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    };
+                    
+                    const formatPercent = (num) => {
+                        if (num === null || num === undefined) return 'N/A';
+                        return (num * 100).toFixed(2) + '%';
+                    };
+                    
+                    // Build statistics HTML
+                    const addStat = (label, value) => {
+                        if (value !== null && value !== undefined && value !== 'N/A') {
+                            statsHTML += `<div class="stock-stat-item">
+                                <span class="stock-stat-label">${label}</span>
+                                <span class="stock-stat-value">${value}</span>
+                            </div>`;
+                        }
+                    };
+                    
+                    // Update After Hours in the top section
+                    const afterHoursEl = document.getElementById('modal-after-hours');
+                    if (stats.after_hours_price && stats.last_trade_price) {
+                        const afterHoursChange = stats.after_hours_price - stats.last_trade_price;
+                        const afterHoursChangePercent = (afterHoursChange / stats.last_trade_price) * 100;
+                        const changeSign = afterHoursChange >= 0 ? '+' : '';
+                        afterHoursEl.textContent = `${changeSign}$${Math.abs(afterHoursChange).toFixed(2)} (${changeSign}${afterHoursChangePercent.toFixed(2)}%)`;
+                        afterHoursEl.className = 'stock-info-value ' + (afterHoursChange >= 0 ? 'positive' : 'negative');
+                    } else if (stats.after_hours_price) {
+                        afterHoursEl.textContent = formatPrice(stats.after_hours_price);
+                        afterHoursEl.className = 'stock-info-value';
+                    } else {
+                        afterHoursEl.textContent = 'N/A';
+                        afterHoursEl.className = 'stock-info-value';
+                    }
+                    
+                    addStat('Previous Close', formatPrice(stats.previous_close));
+                    addStat('Open', formatPrice(stats.open));
+                    
+                    if (stats.bid) {
+                        const bidSize = stats.bid_size ? ` x ${formatNumber(stats.bid_size)}` : '';
+                        addStat('Bid', formatPrice(stats.bid) + bidSize);
+                    }
+                    
+                    if (stats.ask) {
+                        const askSize = stats.ask_size ? ` x ${formatNumber(stats.ask_size)}` : '';
+                        addStat('Ask', formatPrice(stats.ask) + askSize);
+                    }
+                    
+                    if (stats.day_low && stats.day_high) {
+                        addStat('Day\'s Range', `${formatPrice(stats.day_low)} - ${formatPrice(stats.day_high)}`);
+                    }
+                    
+                    if (stats.fifty_two_week_low && stats.fifty_two_week_high) {
+                        addStat('52 Week Range', `${formatPrice(stats.fifty_two_week_low)} - ${formatPrice(stats.fifty_two_week_high)}`);
+                    }
+                    
+                    addStat('Volume', formatNumber(stats.volume));
+                    addStat('Avg. Volume', formatNumber(stats.average_volume));
+                    addStat('Market Cap', formatPrice(stats.market_cap));
+                    addStat('Net Assets', formatPrice(stats.net_assets));
+                    addStat('NAV', formatPrice(stats.nav));
+                    
+                    if (stats.pe_ratio) {
+                        addStat('PE Ratio (TTM)', stats.pe_ratio.toFixed(2));
+                    }
+                    
+                    if (stats.dividend_yield !== null && stats.dividend_yield !== undefined) {
+                        addStat('Yield', formatPercent(stats.dividend_yield));
+                    }
+                    
+                    if (stats.ytd_return !== null && stats.ytd_return !== undefined) {
+                        addStat('YTD Daily Total Return', formatPercent(stats.ytd_return));
+                    }
+                    
+                    if (stats.beta) {
+                        addStat('Beta (5Y Monthly)', stats.beta.toFixed(2));
+                    }
+                    
+                    if (stats.expense_ratio !== null && stats.expense_ratio !== undefined) {
+                        addStat('Expense Ratio (net)', formatPercent(stats.expense_ratio));
+                    }
+                    
+                    statsGrid.innerHTML = statsHTML || '<div class="loading-stats">No statistics available</div>';
+                } else {
+                    statsGrid.innerHTML = '<div class="loading-stats">Unable to load statistics</div>';
+                }
+            } catch (error) {
+                console.error('Error loading stock statistics:', error);
+                statsGrid.innerHTML = '<div class="loading-stats">Error loading statistics</div>';
+            }
+        }
+
+        function closeStockModal() {
+            document.getElementById('stock-modal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('stock-modal');
+            if (event.target === modal) {
+                closeStockModal();
+            }
+        }
+
+        async function loadWhatIfScenarios() {
+            const scenariosSection = document.getElementById('what-if-scenarios-section');
+            const scenariosList = document.getElementById('what-if-scenarios-list');
+            
+            if (!scenariosSection || !scenariosList) {
+                console.log('What-if scenarios section not found in DOM');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/what-if/list');
+                
+                // Check if request failed due to auth
+                if (response.status === 401) {
+                    // User not logged in, hide section
+                    scenariosSection.style.display = 'none';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    scenariosSection.style.display = 'block';
+                    
+                    let scenariosHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">';
+                    
+                    result.data.reverse().forEach(scenario => {
+                        const date = new Date(scenario.timestamp);
+                        const formattedDate = date.toLocaleDateString();
+                        
+                        scenariosHTML += `
+                            <div class="scenario-card-portfolio">
+                                <div class="scenario-card-header">
+                                    <div>
+                                        <div class="scenario-card-title">
+                                            ${scenario.name}
+                                        </div>
+                                        <div class="scenario-card-date">
+                                            ${formattedDate}
+                                        </div>
+                                    </div>
+                                    <button onclick="deleteWhatIfScenario(${scenario.id})" class="scenario-delete-btn">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="scenario-card-info">
+                                    ${scenario.symbol} • $${parseFloat(scenario.amount).toFixed(2)} • ${parseFloat(scenario.shares).toFixed(4)} shares
+                                </div>
+                                <div id="scenario-performance-${scenario.id}" class="scenario-card-performance">
+                                    Loading performance...
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    scenariosHTML += '</div>';
+                    scenariosList.innerHTML = scenariosHTML;
+                    
+                    // Load current prices for all scenarios
+                    result.data.forEach(scenario => {
+                        loadScenarioPerformance(scenario);
+                    });
+                } else {
+                    scenariosSection.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading what-if scenarios:', error);
+                // Don't show error if user is not logged in (401)
+                const scenariosSection = document.getElementById('what-if-scenarios-section');
+                if (scenariosSection) {
+                    scenariosSection.style.display = 'none';
+                }
+            }
+        }
+
+        async function loadScenarioPerformance(scenario) {
+            try {
+                const response = await fetch(`/api/stock-details/${scenario.symbol}`);
+                const result = await response.json();
+                
+                const container = document.getElementById(`scenario-performance-${scenario.id}`);
+                if (!container) return;
+                
+                if (result.success && result.data) {
+                    const currentPrice = result.data.current_price || result.data.price || result.data.last_trade_price || 0;
+                    const savedPrice = parseFloat(scenario.price);
+                    const currentValue = parseFloat(scenario.shares) * currentPrice;
+                    const originalValue = parseFloat(scenario.amount);
+                    const gainLoss = currentValue - originalValue;
+                    const gainLossPercent = savedPrice > 0 ? ((currentPrice - savedPrice) / savedPrice) * 100 : 0;
+                    
+                    console.log(`Scenario ${scenario.symbol}: saved=$${savedPrice}, current=$${currentPrice}, gainLoss=$${gainLoss}, %=${gainLossPercent.toFixed(2)}%`);
+                    
+                    const gainLossClass = gainLoss >= 0 ? 'positive' : 'negative';
+                    const gainLossSign = gainLoss >= 0 ? '+' : '';
+                    
+                    container.innerHTML = `
+                        <div class="scenario-performance-grid">
+                            <div class="scenario-performance-item">
+                                <div class="scenario-performance-label">Current Price</div>
+                                <div class="scenario-performance-value">$${currentPrice.toFixed(2)}</div>
+                            </div>
+                            <div class="scenario-performance-item">
+                                <div class="scenario-performance-label">Performance</div>
+                                <div class="scenario-performance-value ${gainLossClass}">
+                                    ${gainLossSign}$${Math.abs(gainLoss).toFixed(2)} (${gainLossSign}${Math.abs(gainLossPercent).toFixed(2)}%)
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<span class="scenario-performance-value negative">Unable to load</span>';
+                }
+            } catch (error) {
+                console.error(`Error loading performance for ${scenario.symbol}:`, error);
+                const container = document.getElementById(`scenario-performance-${scenario.id}`);
+                if (container) {
+                    container.innerHTML = '<span class="scenario-performance-value negative">Error</span>';
+                }
+            }
+        }
+
+        async function deleteWhatIfScenario(scenarioId) {
+            if (!confirm('Are you sure you want to delete this scenario?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/what-if/delete/${scenarioId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    await loadWhatIfScenarios();
+                } else {
+                    alert(`Error deleting scenario: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error deleting scenario:', error);
+                alert('Error deleting scenario');
+            }
+        }
+    </script>
+</body>
+</html>
+

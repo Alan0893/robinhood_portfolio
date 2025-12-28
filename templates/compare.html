@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Comparison - Portfolio Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/css/compare.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>Stock Comparison</h1>
+            </div>
+            <div class="header-right">
+                <a href="/" class="header-button" id="portfolio-button">
+                    <i class="fas fa-home"></i>
+                    <span id="portfolio-button-text">Portfolio</span>
+                </a>
+                <button class="header-icon-button" id="night-mode-toggle" title="Toggle Night Mode">
+                    <i id="night-mode-icon" class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="search-section">
+                <h2>Search Stocks</h2>
+                <div class="search-input-container">
+                    <input 
+                        type="text" 
+                        id="stock-search-input" 
+                        class="stock-search-input"
+                        placeholder="Search for stocks (e.g., AAPL, Apple)"
+                    />
+                    <div id="stock-search-results" class="stock-search-results">
+                    </div>
+                </div>
+            </div>
+
+            <div class="comparison-section">
+                <div class="comparison-header">
+                    <h2>Stock Comparison</h2>
+                    <button class="clear-all-btn" id="clear-all-btn" onclick="clearAllStocks()" style="display: none;">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+                <div id="comparison-content">
+                    <div class="empty-state">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>No stocks to compare</h3>
+                        <p>Search for stocks above and click "Add to Compare" to get started</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check login status and update button text
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/check-login');
+                const result = await response.json();
+                
+                const portfolioButton = document.getElementById('portfolio-button');
+                const portfolioButtonText = document.getElementById('portfolio-button-text');
+                
+                if (!result.success || !result.logged_in) {
+                    portfolioButtonText.textContent = 'Login';
+                    portfolioButton.querySelector('i').className = 'fas fa-sign-in-alt';
+                }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+                // If error, assume not logged in
+                const portfolioButton = document.getElementById('portfolio-button');
+                const portfolioButtonText = document.getElementById('portfolio-button-text');
+                portfolioButtonText.textContent = 'Login';
+                portfolioButton.querySelector('i').className = 'fas fa-sign-in-alt';
+            }
+        }
+        
+        // Check login status on page load
+        checkLoginStatus();
+        
+        // Night mode toggle
+        const nightModeToggle = document.getElementById('night-mode-toggle');
+        const nightModeIcon = document.getElementById('night-mode-icon');
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('nightMode');
+        if (savedTheme === 'true') {
+            document.body.classList.add('night-mode');
+            nightModeIcon.className = 'fas fa-sun';
+        }
+
+        nightModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('night-mode');
+            const isNightMode = document.body.classList.contains('night-mode');
+            nightModeIcon.className = isNightMode ? 'fas fa-sun' : 'fas fa-moon';
+            localStorage.setItem('nightMode', isNightMode);
+            // Re-render comparison table to update colors
+            renderComparison();
+        });
+
+        // Stock comparison data
+        let comparedStocks = [];
+
+        // Stock search functionality
+        let searchTimeout = null;
+        const stockSearchInput = document.getElementById('stock-search-input');
+        const stockSearchResults = document.getElementById('stock-search-results');
+
+        stockSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            if (!query || query.length < 1) {
+                stockSearchResults.style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(async () => {
+                await performStockSearch(query);
+            }, 300);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!stockSearchInput.contains(e.target) && !stockSearchResults.contains(e.target)) {
+                stockSearchResults.style.display = 'none';
+            }
+        });
+
+        async function performStockSearch(query) {
+            try {
+                stockSearchResults.innerHTML = '<div class="search-message loading">Searching...</div>';
+                stockSearchResults.style.display = 'block';
+
+                const response = await fetch(`/api/search-stocks?q=${encodeURIComponent(query)}`);
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    let resultsHTML = '';
+                    result.data.forEach((item) => {
+                        const symbol = item.symbol || item.displaySymbol || '';
+                        const description = item.description || '';
+                        const isAlreadyAdded = comparedStocks.some(s => s.symbol === symbol);
+                        
+                        resultsHTML += `
+                            <div class="search-result-item">
+                                <div class="search-result-left">
+                                    <div class="search-result-symbol">${symbol}</div>
+                                    <div class="search-result-description">${description}</div>
+                                </div>
+                                <button 
+                                    class="add-to-compare-btn" 
+                                    onclick="addStockToCompare('${symbol}', '${description.replace(/'/g, "\\'")}')"
+                                    ${isAlreadyAdded ? 'disabled' : ''}
+                                >
+                                    ${isAlreadyAdded ? '<i class="fas fa-check"></i> Added' : '<i class="fas fa-plus"></i> Add'}
+                                </button>
+                            </div>
+                        `;
+                    });
+                    stockSearchResults.innerHTML = resultsHTML;
+                } else {
+                    stockSearchResults.innerHTML = '<div class="search-message no-results">No results found</div>';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                stockSearchResults.innerHTML = '<div class="search-message error">Error searching stocks</div>';
+            }
+        }
+
+        async function addStockToCompare(symbol, description) {
+            // Check if already added
+            if (comparedStocks.some(s => s.symbol === symbol)) {
+                return;
+            }
+
+            // Add to list
+            comparedStocks.push({
+                symbol: symbol,
+                description: description,
+                data: null,
+                loading: true
+            });
+
+            // Update UI
+            updateComparisonTable();
+            
+            // Fetch stock details
+            try {
+                const response = await fetch(`/api/stock-details/${symbol}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const stockIndex = comparedStocks.findIndex(s => s.symbol === symbol);
+                    if (stockIndex !== -1) {
+                        comparedStocks[stockIndex].data = result.data;
+                        comparedStocks[stockIndex].loading = false;
+                        updateComparisonTable();
+                    }
+                } else {
+                    throw new Error(result.message || 'Failed to fetch stock details');
+                }
+            } catch (error) {
+                console.error(`Error fetching details for ${symbol}:`, error);
+                const stockIndex = comparedStocks.findIndex(s => s.symbol === symbol);
+                if (stockIndex !== -1) {
+                    comparedStocks[stockIndex].loading = false;
+                    comparedStocks[stockIndex].error = true;
+                    updateComparisonTable();
+                }
+            }
+
+            // Clear search input
+            stockSearchInput.value = '';
+            stockSearchResults.style.display = 'none';
+        }
+
+        function removeStockFromCompare(symbol) {
+            comparedStocks = comparedStocks.filter(s => s.symbol !== symbol);
+            updateComparisonTable();
+        }
+
+        function clearAllStocks() {
+            comparedStocks = [];
+            updateComparisonTable();
+        }
+
+        function updateComparisonTable() {
+            const comparisonContent = document.getElementById('comparison-content');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+
+            if (comparedStocks.length === 0) {
+                comparisonContent.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>No stocks to compare</h3>
+                        <p>Search for stocks above and click "Add to Compare" to get started</p>
+                    </div>
+                `;
+                clearAllBtn.style.display = 'none';
+                return;
+            }
+
+            clearAllBtn.style.display = 'block';
+
+            // Build table
+            let tableHTML = `
+                <div class="comparison-table-container">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+            `;
+
+            // Add stock headers
+            comparedStocks.forEach(stock => {
+                tableHTML += `
+                    <th class="stock-header-cell">
+                        <div class="stock-symbol">${stock.symbol}</div>
+                        <div class="stock-name">${stock.description || ''}</div>
+                        ${stock.loading ? '<div class="stock-loading">Loading...</div>' : ''}
+                        ${stock.error ? '<div class="stock-error">Error</div>' : ''}
+                        ${!stock.loading && !stock.error && stock.data ? `
+                            <div class="stock-price">$${(stock.data.current_price || stock.data.price || stock.data.last_trade_price || 0).toFixed(2)}</div>
+                            ${stock.data.day_change_percent !== undefined ? `
+                                <div class="stock-change ${(stock.data.day_change_percent || 0) >= 0 ? 'positive' : 'negative'}">
+                                    ${(stock.data.day_change_percent || 0) >= 0 ? '+' : ''}${(stock.data.day_change_percent || 0).toFixed(2)}%
+                                </div>
+                            ` : ''}
+                        ` : ''}
+                        <button class="remove-stock-btn" onclick="removeStockFromCompare('${stock.symbol}')">
+                            <i class="fas fa-times"></i> Remove
+                        </button>
+                    </th>
+                `;
+            });
+
+            tableHTML += `
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            // Define metrics to compare
+            // compare: 'higher' = higher is better, 'lower' = lower is better, null = no comparison
+            const metrics = [
+                { label: 'Current Price', key: 'current_price', fallback: 'price', format: (v) => `$${v.toFixed(2)}`, compare: null },
+                { label: 'Day Change', key: 'day_change', format: (v) => `${v >= 0 ? '+' : ''}$${v.toFixed(2)}`, compare: 'higher' },
+                { label: 'Day Change %', key: 'day_change_percent', format: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, compare: 'higher' },
+                { label: 'Previous Close', key: 'previous_close', format: (v) => v ? `$${v.toFixed(2)}` : 'N/A', compare: null },
+                { label: 'Open', key: 'open', format: (v) => v ? `$${v.toFixed(2)}` : 'N/A', compare: null },
+                { label: 'Day High', key: 'day_high', format: (v) => v ? `$${v.toFixed(2)}` : 'N/A', compare: null },
+                { label: 'Day Low', key: 'day_low', format: (v) => v ? `$${v.toFixed(2)}` : 'N/A', compare: null },
+                { label: '52 Week High', key: 'high_52_week', format: (v) => v ? `$${v.toFixed(2)}` : 'N/A', compare: null },
+                { label: '52 Week Low', key: 'low_52_week', format: (v) => v ? `$${v.toFixed(2)}` : 'N/A', compare: null },
+                { label: 'Market Cap', key: 'market_cap', format: (v) => formatMarketCap(v), compare: 'higher' },
+                { label: 'P/E Ratio', key: 'pe_ratio', format: (v) => v ? v.toFixed(2) : 'N/A', compare: 'lower' },
+                { label: 'Beta', key: 'beta', format: (v) => v ? v.toFixed(2) : 'N/A', compare: 'lower' },
+                { label: 'Dividend Yield', key: 'dividend_yield', format: (v) => v ? `${(v * 100).toFixed(2)}%` : 'N/A', compare: 'higher' },
+                { label: 'Sector', key: 'sector', format: (v) => v || 'N/A', compare: null }
+            ];
+
+            metrics.forEach(metric => {
+                tableHTML += `<tr><td class="metric-label">${metric.label}</td>`;
+                
+                // Collect values for comparison
+                const values = comparedStocks.map(stock => {
+                    if (stock.loading || stock.error || !stock.data) return null;
+                    return stock.data[metric.key] || stock.data[metric.fallback];
+                });
+                
+                // Find best value index (only if comparison is enabled and we have 2+ valid values)
+                let bestIndex = -1;
+                if (metric.compare && values.filter(v => v !== null && v !== undefined && typeof v === 'number').length >= 2) {
+                    const validValues = values.map((v, i) => ({ value: v, index: i }))
+                        .filter(item => item.value !== null && item.value !== undefined && typeof item.value === 'number');
+                    
+                    if (validValues.length >= 2) {
+                        if (metric.compare === 'higher') {
+                            bestIndex = validValues.reduce((best, curr) => curr.value > best.value ? curr : best).index;
+                        } else if (metric.compare === 'lower') {
+                            bestIndex = validValues.reduce((best, curr) => curr.value < best.value ? curr : best).index;
+                        }
+                    }
+                }
+                
+                comparedStocks.forEach((stock, stockIndex) => {
+                    if (stock.loading) {
+                        tableHTML += '<td>-</td>';
+                    } else if (stock.error || !stock.data) {
+                        tableHTML += '<td class="stock-error">Error</td>';
+                    } else {
+                        const value = stock.data[metric.key] || stock.data[metric.fallback];
+                        const formatted = value !== undefined && value !== null ? metric.format(value) : 'N/A';
+                        const isPositive = metric.key.includes('change') && value >= 0;
+                        const isNegative = metric.key.includes('change') && value < 0;
+                        let valueClass = isPositive ? 'positive' : (isNegative ? 'negative' : '');
+                        
+                        // Add winner class if this stock has the best value for this metric
+                        const isWinner = stockIndex === bestIndex;
+                        
+                        tableHTML += `<td class="metric-value ${valueClass} ${isWinner ? 'winner' : ''}">${formatted}</td>`;
+                    }
+                });
+                
+                tableHTML += '</tr>';
+            });
+
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            comparisonContent.innerHTML = tableHTML;
+        }
+
+        function formatMarketCap(value) {
+            if (!value) return 'N/A';
+            if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+            if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+            if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+            return `$${value.toLocaleString()}`;
+        }
+
+        function formatNumber(value) {
+            if (!value) return 'N/A';
+            if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+            if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+            if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+            return value.toLocaleString();
+        }
+    </script>
+</body>
+</html>
+

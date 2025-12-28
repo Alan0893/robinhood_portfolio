@@ -1,0 +1,831 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #ffffff;
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+    color: #000000;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 20px 24px;
+    margin-bottom: 0;
+    box-shadow: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 4px;
+}
+
+.header-button {
+    background: transparent;
+    border: 1px solid #e5e5e5;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #000000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.header-button:hover {
+    background: #f5f5f5;
+    border-color: #d0d0d0;
+}
+
+.header-icon-button {
+    background: transparent;
+    border: 1px solid #e5e5e5;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 16px;
+    color: #000000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.header-icon-button:hover {
+    background: #f5f5f5;
+    border-color: #d0d0d0;
+}
+
+.dashboard {
+    padding: 24px;
+}
+
+.input-section {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+}
+
+.input-section h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #000000;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #000000;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #00C805;
+}
+
+.search-input-container {
+    position: relative;
+}
+
+.stock-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #000000;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.stock-search-input:focus {
+    outline: none;
+    border-color: #00C805;
+}
+
+.stock-search-results {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: -1px;
+}
+
+.search-result-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.search-result-symbol {
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 4px;
+}
+
+.search-result-description {
+    font-size: 12px;
+    color: #666666;
+}
+
+.calculate-btn {
+    width: 100%;
+    padding: 14px;
+    background: #00C805;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 20px;
+}
+
+.calculate-btn:hover {
+    background: #00a805;
+}
+
+.calculate-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.delete-btn {
+    padding: 6px 12px;
+    background: #d32f2f;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+    background: #b71c1c;
+}
+
+.scenario-card {
+    padding: 16px;
+    margin-bottom: 12px;
+    background: #f8f9fa;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.scenario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 8px;
+}
+
+.scenario-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #000000;
+    margin-bottom: 4px;
+}
+
+.scenario-date {
+    font-size: 12px;
+    color: #666666;
+}
+
+.scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    font-size: 12px;
+}
+
+.scenario-label {
+    color: #666666;
+    margin-bottom: 4px;
+}
+
+.scenario-value {
+    font-weight: 600;
+    color: #000000;
+}
+
+.scenario-value.positive {
+    color: #00C805;
+}
+
+.scenario-value.negative {
+    color: #d32f2f;
+}
+
+.scenario-performance {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    font-size: 12px;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.holdings-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 16px;
+}
+
+.holding-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.holding-symbol {
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 4px;
+}
+
+.holding-details {
+    font-size: 12px;
+    color: #666666;
+}
+
+.holding-value {
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 4px;
+}
+
+.holding-performance {
+    font-size: 12px;
+}
+
+.holding-performance.positive {
+    color: #00C805;
+}
+
+.holding-performance.negative {
+    color: #d32f2f;
+}
+
+.error-message {
+    color: #d32f2f;
+}
+
+.info-message {
+    color: #666666;
+}
+
+.warning-banner {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.warning-title {
+    color: #856404;
+    margin-bottom: 12px;
+}
+
+.warning-text {
+    color: #856404;
+    margin-bottom: 16px;
+}
+
+.results-section {
+    margin-top: 32px;
+}
+
+.results-card {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.results-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 20px;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.result-item {
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.result-label {
+    font-size: 12px;
+    color: #666666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.result-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #000000;
+}
+
+.result-value.positive {
+    color: #00C805;
+}
+
+.result-value.negative {
+    color: #d32f2f;
+}
+
+.portfolio-impact {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.impact-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.impact-item:last-child {
+    border-bottom: none;
+}
+
+.impact-label {
+    color: #666666;
+    font-size: 14px;
+}
+
+.impact-value {
+    font-weight: 600;
+    color: #000000;
+}
+
+.impact-value.positive {
+    color: #00C805;
+}
+
+.impact-value.negative {
+    color: #d32f2f;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666666;
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #000000;
+}
+
+.selected-stock {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.selected-stock-info {
+    flex: 1;
+}
+
+.selected-stock-symbol {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 4px;
+}
+
+.selected-stock-price {
+    font-size: 14px;
+    color: #666666;
+}
+
+.remove-stock-btn {
+    padding: 6px 12px;
+    background: #d32f2f;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.remove-stock-btn:hover {
+    background: #b71c1c;
+}
+
+/* Dark mode styles */
+body.night-mode {
+    background: #121212;
+    color: #e0e0e0;
+}
+
+body.night-mode .header {
+    background: #1e1e1e;
+    border-bottom-color: #333333;
+}
+
+body.night-mode .header h1 {
+    color: #e0e0e0;
+}
+
+body.night-mode .header-button {
+    border-color: #404040;
+    color: #e0e0e0;
+}
+
+body.night-mode .header-button:hover {
+    background: #2a2a2a;
+    border-color: #555555;
+}
+
+body.night-mode .header-icon-button {
+    border-color: #404040;
+    color: #e0e0e0;
+}
+
+body.night-mode .header-icon-button:hover {
+    background: #2a2a2a;
+    border-color: #555555;
+}
+
+body.night-mode .input-section,
+body.night-mode .results-card {
+    background: #1e1e1e;
+    border-color: #333333;
+}
+
+body.night-mode .input-section h2,
+body.night-mode .results-card h3 {
+    color: #e0e0e0;
+}
+
+body.night-mode .input-group label {
+    color: #e0e0e0;
+}
+
+body.night-mode .input-group input,
+body.night-mode .stock-search-input {
+    background: #1e1e1e;
+    border-color: #333333;
+    color: #e0e0e0;
+}
+
+body.night-mode .input-group input:focus,
+body.night-mode .stock-search-input:focus {
+    border-color: #00C805;
+}
+
+body.night-mode .stock-search-results {
+    background: #1e1e1e;
+    border-color: #333333;
+}
+
+body.night-mode .search-result-item {
+    border-bottom-color: #333333;
+}
+
+body.night-mode .search-result-item:hover {
+    background-color: #2a2a2a;
+}
+
+body.night-mode .search-result-symbol {
+    color: #e0e0e0;
+}
+
+body.night-mode .search-result-description {
+    color: #999999;
+}
+
+body.night-mode .result-item {
+    background: #2a2a2a;
+}
+
+body.night-mode .result-label {
+    color: #999999;
+}
+
+body.night-mode .result-value {
+    color: #e0e0e0;
+}
+
+body.night-mode .selected-stock {
+    background: #2a2a2a;
+}
+
+body.night-mode .selected-stock-symbol {
+    color: #e0e0e0;
+}
+
+body.night-mode .selected-stock-price {
+    color: #999999;
+}
+
+body.night-mode .impact-label {
+    color: #999999;
+}
+
+body.night-mode .impact-value {
+    color: #e0e0e0;
+}
+
+body.night-mode .impact-value.positive {
+    color: #00C805;
+}
+
+body.night-mode .impact-value.negative {
+    color: #ef5350;
+}
+
+body.night-mode .result-value.positive {
+    color: #00C805;
+}
+
+body.night-mode .result-value.negative {
+    color: #ef5350;
+}
+
+body.night-mode .scenario-value.positive {
+    color: #00C805;
+}
+
+body.night-mode .scenario-value.negative {
+    color: #ef5350;
+}
+
+body.night-mode .holding-performance.positive {
+    color: #00C805;
+}
+
+body.night-mode .holding-performance.negative {
+    color: #ef5350;
+}
+
+body.night-mode .portfolio-impact {
+    border-top-color: #333333;
+}
+
+body.night-mode .impact-item {
+    border-bottom-color: #333333;
+}
+
+body.night-mode .empty-state h3 {
+    color: #e0e0e0;
+}
+
+body.night-mode .empty-state {
+    color: #999999;
+}
+
+.scenario-item {
+    transition: background-color 0.2s;
+}
+
+body.night-mode .scenario-item {
+    border-color: #333333;
+}
+
+body.night-mode .scenario-item:hover {
+    background-color: #2a2a2a;
+}
+
+/* Dark mode styles for holdings section */
+body.night-mode #portfolio-impact > div:last-child {
+    border-top-color: #333333 !important;
+}
+
+body.night-mode #portfolio-impact > div:last-child > div:first-child {
+    color: #e0e0e0 !important;
+}
+
+body.night-mode #portfolio-impact > div:last-child > div:last-child > div {
+    border-bottom-color: #333333 !important;
+}
+
+body.night-mode #portfolio-impact > div:last-child > div:last-child > div > div > div {
+    color: #e0e0e0 !important;
+}
+
+body.night-mode #portfolio-impact > div:last-child > div:last-child > div > div:first-child > div:last-child {
+    color: #999999 !important;
+}
+
+/* Dark mode button styles */
+body.night-mode .calculate-btn:not(:disabled) {
+    background: #00C805;
+}
+
+body.night-mode .calculate-btn:not(:disabled):hover {
+    background: #00a805;
+}
+
+body.night-mode .calculate-btn:disabled {
+    background: #404040;
+    color: #666666;
+}
+
+body.night-mode .remove-stock-btn,
+body.night-mode .delete-btn {
+    background: #d32f2f;
+}
+
+body.night-mode .remove-stock-btn:hover,
+body.night-mode .delete-btn:hover {
+    background: #ef5350;
+}
+
+/* Dark mode styles for saved scenarios */
+body.night-mode .scenario-card {
+    background: #2a2a2a;
+    border-color: #333333;
+}
+
+body.night-mode .scenario-card:hover {
+    background: #333333;
+}
+
+body.night-mode .scenario-title {
+    color: #e0e0e0;
+}
+
+body.night-mode .scenario-date {
+    color: #999999;
+}
+
+body.night-mode .scenario-label {
+    color: #999999;
+}
+
+body.night-mode .scenario-value {
+    color: #e0e0e0;
+}
+
+body.night-mode .scenario-performance {
+    border-top-color: #333333;
+}
+
+body.night-mode .scenario-item {
+    background: #2a2a2a !important;
+    border-color: #333333 !important;
+}
+
+body.night-mode .scenario-item > div > div > div {
+    color: #e0e0e0 !important;
+}
+
+body.night-mode .scenario-item > div > div > div:last-child,
+body.night-mode .scenario-item > div:last-child > div > div:first-child,
+body.night-mode .scenario-item .scenario-performance {
+    color: #999999 !important;
+}
+
+body.night-mode .scenario-item > div:last-child {
+    border-top-color: #333333 !important;
+}
+
+/* Dark mode for holdings */
+body.night-mode .holdings-title {
+    color: #e0e0e0;
+}
+
+body.night-mode .holding-item {
+    border-bottom-color: #333333;
+}
+
+body.night-mode .holding-symbol,
+body.night-mode .holding-value {
+    color: #e0e0e0;
+}
+
+body.night-mode .holding-details {
+    color: #999999;
+}
+
+/* Dark mode for messages */
+body.night-mode .info-message {
+    color: #999999;
+}
+
+body.night-mode .error-message {
+    color: #ef5350;
+}
+
+/* Dark mode for warning banner */
+body.night-mode .warning-banner {
+    background: #3a2f1c;
+    border-color: #5a4629;
+}
+
+body.night-mode .warning-title,
+body.night-mode .warning-text {
+    color: #ffd54f;
+}

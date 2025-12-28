@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What If Analysis - Portfolio Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/css/what-if.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>What If Analysis</h1>
+            </div>
+            <div class="header-right">
+                <a href="/" class="header-button" id="portfolio-button">
+                    <i class="fas fa-home"></i>
+                    <span id="portfolio-button-text">Portfolio</span>
+                </a>
+                <a href="/compare" class="header-button">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </a>
+                <button class="header-icon-button" id="night-mode-toggle" title="Toggle Night Mode">
+                    <i id="night-mode-icon" class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div id="login-required-message" class="warning-banner" style="display: none;">
+                <h3 class="warning-title">
+                    <i class="fas fa-lock"></i> Login Required
+                </h3>
+                <p class="warning-text">
+                    You must be logged in to use the What If feature. Please login to your Robinhood account first.
+                </p>
+                <a href="/" class="calculate-btn" style="width: auto; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Go to Login</span>
+                </a>
+            </div>
+
+            <div id="what-if-content">
+            <div class="input-section">
+                <h2>Simulate Investment</h2>
+                
+                <div class="input-group">
+                    <label for="stock-search-input">Stock Symbol</label>
+                    <div class="search-input-container">
+                        <input 
+                            type="text" 
+                            id="stock-search-input" 
+                            class="stock-search-input"
+                            placeholder="Search for stocks (e.g., AAPL, Apple)"
+                        />
+                        <div id="stock-search-results" class="stock-search-results">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="selected-stock-container" style="display: none;">
+                    <div class="selected-stock">
+                        <div class="selected-stock-info">
+                            <div class="selected-stock-symbol" id="selected-symbol"></div>
+                            <div class="selected-stock-price" id="selected-price"></div>
+                        </div>
+                        <button class="remove-stock-btn" onclick="clearSelectedStock()">
+                            <i class="fas fa-times"></i> Change
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="investment-amount">Investment Amount ($)</label>
+                    <input 
+                        type="number" 
+                        id="investment-amount" 
+                        placeholder="Enter amount (e.g., 1000)"
+                        min="0"
+                        step="0.01"
+                    />
+                </div>
+
+                <button class="calculate-btn" id="calculate-btn" onclick="calculateWhatIf()" disabled>
+                    <i class="fas fa-calculator"></i> Calculate
+                </button>
+            </div>
+
+            <div id="results-section" class="results-section" style="display: none;">
+                <div class="results-card">
+                    <h3>Investment Details</h3>
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <div class="result-label">Shares You'd Own</div>
+                            <div class="result-value" id="result-shares">-</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Investment Value</div>
+                            <div class="result-value" id="result-value">-</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Share Price</div>
+                            <div class="result-value" id="result-price">-</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Day Change</div>
+                            <div class="result-value" id="result-change">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-card" id="portfolio-impact-card" style="display: none;">
+                    <h3>Portfolio Impact</h3>
+                    <div class="portfolio-impact" id="portfolio-impact">
+                        <div class="impact-item">
+                            <span class="impact-label">Loading portfolio data...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-card" id="save-scenario-card" style="display: none;">
+                    <h3>Save Scenario</h3>
+                    <div class="input-group" style="margin-bottom: 16px;">
+                        <label for="scenario-name">Scenario Name (optional)</label>
+                        <input 
+                            type="text" 
+                            id="scenario-name" 
+                            placeholder="e.g., AAPL Investment Plan"
+                        />
+                    </div>
+                    <button class="calculate-btn" onclick="saveScenario()">
+                        <i class="fas fa-save"></i> Save This Scenario
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-section" id="saved-scenarios-section">
+                <div class="results-card">
+                    <h3>Saved Scenarios</h3>
+                    <div id="saved-scenarios-list">
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <i class="fas fa-bookmark"></i>
+                            <p>No saved scenarios yet. Calculate and save a scenario to track it over time.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="empty-state" class="empty-state">
+                <i class="fas fa-calculator"></i>
+                <h3>Ready to simulate an investment?</h3>
+                <p>Search for a stock above, enter an amount, and see what would happen if you invested right now</p>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Night mode toggle
+        const nightModeToggle = document.getElementById('night-mode-toggle');
+        const nightModeIcon = document.getElementById('night-mode-icon');
+        
+        const savedTheme = localStorage.getItem('nightMode');
+        if (savedTheme === 'true') {
+            document.body.classList.add('night-mode');
+            nightModeIcon.className = 'fas fa-sun';
+        }
+
+        nightModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('night-mode');
+            const isNightMode = document.body.classList.contains('night-mode');
+            nightModeIcon.className = isNightMode ? 'fas fa-sun' : 'fas fa-moon';
+            localStorage.setItem('nightMode', isNightMode);
+        });
+
+        // State
+        let selectedStock = null;
+        let portfolioData = null;
+        let currentCalculation = null; // Store current calculation for saving
+
+        // Stock search
+        let searchTimeout = null;
+        const stockSearchInput = document.getElementById('stock-search-input');
+        const stockSearchResults = document.getElementById('stock-search-results');
+        const investmentAmountInput = document.getElementById('investment-amount');
+        const calculateBtn = document.getElementById('calculate-btn');
+
+        stockSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            if (!query || query.length < 1) {
+                stockSearchResults.style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(async () => {
+                await performStockSearch(query);
+            }, 300);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!stockSearchInput.contains(e.target) && !stockSearchResults.contains(e.target)) {
+                stockSearchResults.style.display = 'none';
+            }
+        });
+
+        investmentAmountInput.addEventListener('input', () => {
+            updateCalculateButton();
+        });
+
+        async function performStockSearch(query) {
+            try {
+                stockSearchResults.innerHTML = '<div class="info-message" style="padding: 12px; text-align: center;">Searching...</div>';
+                stockSearchResults.style.display = 'block';
+
+                const response = await fetch(`/api/search-stocks?q=${encodeURIComponent(query)}`);
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    let resultsHTML = '';
+                    result.data.forEach((item) => {
+                        const symbol = item.symbol || item.displaySymbol || '';
+                        const description = item.description || '';
+                        resultsHTML += `
+                            <div class="search-result-item" onclick="selectStock('${symbol}', '${description.replace(/'/g, "\\'")}')">
+                                <div class="search-result-symbol">${symbol}</div>
+                                <div class="search-result-description">${description}</div>
+                            </div>
+                        `;
+                    });
+                    stockSearchResults.innerHTML = resultsHTML;
+                } else {
+                    stockSearchResults.innerHTML = '<div class="info-message" style="padding: 12px; text-align: center;">No results found</div>';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                stockSearchResults.innerHTML = '<div class="error-message" style="padding: 12px; text-align: center;">Error searching stocks</div>';
+            }
+        }
+
+        async function selectStock(symbol, description) {
+            stockSearchInput.value = symbol;
+            stockSearchResults.style.display = 'none';
+
+            // Fetch stock details
+            try {
+                const response = await fetch(`/api/stock-details/${symbol}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    selectedStock = {
+                        symbol: symbol,
+                        description: description,
+                        data: result.data
+                    };
+                    
+                    displaySelectedStock();
+                    updateCalculateButton();
+                } else {
+                    alert(`Error loading stock details: ${result.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error loading stock details:', error);
+                alert(`Error loading stock details for ${symbol}`);
+            }
+        }
+
+        function displaySelectedStock() {
+            if (!selectedStock) return;
+
+            const container = document.getElementById('selected-stock-container');
+            const symbolEl = document.getElementById('selected-symbol');
+            const priceEl = document.getElementById('selected-price');
+            
+            const price = selectedStock.data.current_price || selectedStock.data.price || selectedStock.data.last_trade_price || 0;
+            const change = selectedStock.data.day_change_percent || 0;
+            const changeClass = change >= 0 ? 'positive' : 'negative';
+            const changeSign = change >= 0 ? '+' : '';
+            
+            symbolEl.textContent = selectedStock.symbol;
+            priceEl.innerHTML = `
+                $${price.toFixed(2)} 
+                <span style="color: ${change >= 0 ? '#00C805' : '#d32f2f'}; margin-left: 8px;">
+                    ${changeSign}${change.toFixed(2)}%
+                </span>
+            `;
+            
+            container.style.display = 'block';
+        }
+
+        function clearSelectedStock() {
+            selectedStock = null;
+            document.getElementById('selected-stock-container').style.display = 'none';
+            stockSearchInput.value = '';
+            updateCalculateButton();
+        }
+
+        function updateCalculateButton() {
+            const hasStock = selectedStock !== null;
+            const hasAmount = investmentAmountInput.value && parseFloat(investmentAmountInput.value) > 0;
+            calculateBtn.disabled = !(hasStock && hasAmount);
+        }
+
+        async function calculateWhatIf() {
+            if (!selectedStock) {
+                alert('Please select a stock first');
+                return;
+            }
+
+            const amount = parseFloat(investmentAmountInput.value);
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid investment amount');
+                return;
+            }
+
+            const price = selectedStock.data.current_price || selectedStock.data.price || selectedStock.data.last_trade_price || 0;
+            if (price <= 0) {
+                alert('Unable to get current stock price');
+                return;
+            }
+
+            // Calculate shares
+            const shares = amount / price;
+            const currentValue = shares * price;
+            const dayChange = selectedStock.data.day_change || 0;
+            const dayChangeValue = shares * dayChange;
+
+            // Display results
+            document.getElementById('result-shares').textContent = shares.toFixed(4);
+            document.getElementById('result-value').textContent = `$${currentValue.toFixed(2)}`;
+            document.getElementById('result-price').textContent = `$${price.toFixed(2)}`;
+            
+            const changeEl = document.getElementById('result-change');
+            const changePercent = selectedStock.data.day_change_percent || 0;
+            changeEl.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+            changeEl.className = `result-value ${changePercent >= 0 ? 'positive' : 'negative'}`;
+
+            // Show results
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('results-section').style.display = 'block';
+            document.getElementById('save-scenario-card').style.display = 'block';
+
+            // Load portfolio data for impact analysis
+            await loadPortfolioImpact(amount, shares, price);
+        }
+
+        async function loadPortfolioImpact(investmentAmount, shares, price) {
+            const impactCard = document.getElementById('portfolio-impact-card');
+            const impactDiv = document.getElementById('portfolio-impact');
+            
+            impactCard.style.display = 'block';
+            impactDiv.innerHTML = '<div class="impact-item"><span class="impact-label">Loading portfolio data...</span></div>';
+
+            try {
+                const response = await fetch('/api/portfolio');
+                
+                // Check if request failed due to auth
+                if (response.status === 401) {
+                    impactDiv.innerHTML = '<div class="impact-item"><span class="impact-label error-message">Please login to see portfolio impact. <a href="/" class="calculate-btn" style="width: auto; display: inline; padding: 4px 8px; font-size: 12px; margin-left: 8px;">Go to Login</a></span></div>';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    portfolioData = result.data;
+                    console.log('Portfolio data loaded:', portfolioData);
+                    console.log('Holdings:', portfolioData.holdings);
+                    displayPortfolioImpact(investmentAmount, shares, price);
+                } else {
+                    const errorMsg = result.message || 'Unable to load portfolio data';
+                    impactDiv.innerHTML = `<div class="impact-item"><span class="impact-label error-message">${errorMsg}</span></div>`;
+                }
+            } catch (error) {
+                console.error('Error loading portfolio:', error);
+                impactDiv.innerHTML = `<div class="impact-item"><span class="impact-label error-message">Error loading portfolio data: ${error.message}</span></div>`;
+            }
+        }
+
+        function displayPortfolioImpact(investmentAmount, shares, price) {
+            if (!portfolioData) return;
+
+            const currentValue = shares * price;
+            const totalPortfolioValue = parseFloat(portfolioData.total_value || 0);
+            const newTotalValue = totalPortfolioValue + currentValue;
+            const newPercentage = (currentValue / newTotalValue) * 100;
+
+            // Check if stock already exists in portfolio
+            const existingHolding = portfolioData.holdings?.find(h => h.symbol === selectedStock.symbol);
+            let impactHTML = '';
+
+            if (existingHolding) {
+                const existingShares = parseFloat(existingHolding.quantity || 0);
+                const existingValue = parseFloat(existingHolding.market_value || 0);
+                const newShares = existingShares + shares;
+                const newValue = existingValue + currentValue;
+                const newHoldingPercentage = (newValue / newTotalValue) * 100;
+                const oldHoldingPercentage = (existingValue / totalPortfolioValue) * 100;
+
+                impactHTML = `
+                    <div class="impact-item">
+                        <span class="impact-label">Current ${selectedStock.symbol} Position</span>
+                        <span class="impact-value">${existingShares.toFixed(4)} shares (${oldHoldingPercentage.toFixed(2)}%)</span>
+                    </div>
+                    <div class="impact-item">
+                        <span class="impact-label">New ${selectedStock.symbol} Position</span>
+                        <span class="impact-value">${newShares.toFixed(4)} shares (${newHoldingPercentage.toFixed(2)}%)</span>
+                    </div>
+                    <div class="impact-item">
+                        <span class="impact-label">Additional Investment</span>
+                        <span class="impact-value">$${investmentAmount.toFixed(2)}</span>
+                    </div>
+                `;
+            } else {
+                impactHTML = `
+                    <div class="impact-item">
+                        <span class="impact-label">New Position</span>
+                        <span class="impact-value">${selectedStock.symbol}: ${shares.toFixed(4)} shares</span>
+                    </div>
+                    <div class="impact-item">
+                        <span class="impact-label">Portfolio Allocation</span>
+                        <span class="impact-value">${newPercentage.toFixed(2)}%</span>
+                    </div>
+                    <div class="impact-item">
+                        <span class="impact-label">Investment Amount</span>
+                        <span class="impact-value">$${investmentAmount.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+
+            // Calculate gain/loss impact
+            const currentTotalGainLoss = portfolioData.holdings?.reduce((sum, h) => sum + (parseFloat(h.gain_loss) || 0), 0) || 0;
+            const currentTotalCost = portfolioData.holdings?.reduce((sum, h) => sum + ((parseFloat(h.average_buy_price) || 0) * (parseFloat(h.quantity) || 0)), 0) || 0;
+            const newTotalCost = currentTotalCost + investmentAmount;
+            const newStockValue = (portfolioData.stock_value || 0) + currentValue;
+            const newTotalGainLoss = newStockValue - newTotalCost;
+            const currentGainLossPercent = currentTotalCost > 0 ? (currentTotalGainLoss / currentTotalCost) * 100 : 0;
+            const newGainLossPercent = newTotalCost > 0 ? (newTotalGainLoss / newTotalCost) * 100 : 0;
+
+            impactHTML += `
+                <div class="impact-item">
+                    <span class="impact-label">Current Portfolio Value</span>
+                    <span class="impact-value">$${totalPortfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div class="impact-item">
+                    <span class="impact-label">New Portfolio Value</span>
+                    <span class="impact-value">$${newTotalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div class="impact-item">
+                    <span class="impact-label">Current Total Gain/Loss</span>
+                    <span class="impact-value ${currentTotalGainLoss >= 0 ? 'positive' : 'negative'}">
+                        ${currentTotalGainLoss >= 0 ? '+' : ''}$${currentTotalGainLoss.toFixed(2)} (${currentGainLossPercent >= 0 ? '+' : ''}${currentGainLossPercent.toFixed(2)}%)
+                    </span>
+                </div>
+                <div class="impact-item">
+                    <span class="impact-label">New Total Gain/Loss</span>
+                    <span class="impact-value ${newTotalGainLoss >= 0 ? 'positive' : 'negative'}">
+                        ${newTotalGainLoss >= 0 ? '+' : ''}$${newTotalGainLoss.toFixed(2)} (${newGainLossPercent >= 0 ? '+' : ''}${newGainLossPercent.toFixed(2)}%)
+                    </span>
+                </div>
+            `;
+
+            // Add current holdings section
+            if (portfolioData.holdings && portfolioData.holdings.length > 0) {
+                impactHTML += `
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e5e5;">
+                        <div class="holdings-title">
+                            Current Holdings
+                        </div>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                `;
+                
+                // Sort holdings by market value (descending)
+                const sortedHoldings = [...portfolioData.holdings].sort((a, b) => {
+                    const valueA = parseFloat(a.market_value || 0);
+                    const valueB = parseFloat(b.market_value || 0);
+                    return valueB - valueA;
+                });
+                
+                sortedHoldings.forEach(holding => {
+                    const symbol = holding.symbol || 'N/A';
+                    const quantity = parseFloat(holding.quantity || 0);
+                    const marketValue = parseFloat(holding.market_value || 0);
+                    const percentage = portfolioData.stock_value > 0 
+                        ? (marketValue / portfolioData.stock_value) * 100 
+                        : 0;
+                    const gainLoss = parseFloat(holding.gain_loss || 0);
+                    const gainLossPercent = parseFloat(holding.gain_loss_percent || 0);
+                    const gainLossClass = gainLoss >= 0 ? 'positive' : 'negative';
+                    const gainLossSign = gainLoss >= 0 ? '+' : '';
+                    
+                    impactHTML += `
+                        <div class="holding-item">
+                            <div style="flex: 1;">
+                                <div class="holding-symbol">
+                                    ${symbol}
+                                </div>
+                                <div class="holding-details">
+                                    ${quantity.toFixed(4)} shares • ${percentage.toFixed(2)}%
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="holding-value">
+                                    $${marketValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <div class="holding-performance ${gainLossClass}">
+                                    ${gainLossSign}$${Math.abs(gainLoss).toFixed(2)} (${gainLossSign}${Math.abs(gainLossPercent).toFixed(2)}%)
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                impactHTML += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('portfolio-impact').innerHTML = impactHTML;
+        }
+
+        // Check login status on page load
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/check-login');
+                const result = await response.json();
+                
+                const portfolioButton = document.getElementById('portfolio-button');
+                const portfolioButtonText = document.getElementById('portfolio-button-text');
+                
+                if (result.success && result.logged_in) {
+                    document.getElementById('login-required-message').style.display = 'none';
+                    document.getElementById('what-if-content').style.display = 'block';
+                    portfolioButtonText.textContent = 'Portfolio';
+                    portfolioButton.querySelector('i').className = 'fas fa-home';
+                    // Load saved scenarios if logged in
+                    if (typeof loadSavedScenarios === 'function') {
+                        loadSavedScenarios();
+                    }
+                } else {
+                    document.getElementById('login-required-message').style.display = 'block';
+                    document.getElementById('what-if-content').style.display = 'none';
+                    portfolioButtonText.textContent = 'Login';
+                    portfolioButton.querySelector('i').className = 'fas fa-sign-in-alt';
+                }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+                document.getElementById('login-required-message').style.display = 'block';
+                document.getElementById('what-if-content').style.display = 'none';
+                const portfolioButton = document.getElementById('portfolio-button');
+                const portfolioButtonText = document.getElementById('portfolio-button-text');
+                portfolioButtonText.textContent = 'Login';
+                portfolioButton.querySelector('i').className = 'fas fa-sign-in-alt';
+            }
+        }
+
+        // Verify login before calculating
+        const originalCalculateWhatIf = calculateWhatIf;
+        calculateWhatIf = async function() {
+            // First check if user is logged in
+            try {
+                const loginCheck = await fetch('/api/check-login');
+                const loginResult = await loginCheck.json();
+                
+                if (!loginResult.success || !loginResult.logged_in) {
+                    alert('Please login to your Robinhood account first to use the What If feature and see portfolio impact.');
+                    window.location.href = '/';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking login:', error);
+                alert('Unable to verify login status. Please try logging in again.');
+                return;
+            }
+            
+            // Proceed with original calculation
+            await originalCalculateWhatIf();
+        };
+
+        // Save scenario function
+        async function saveScenario() {
+            if (!selectedStock || !portfolioData) {
+                alert('Please calculate a what-if scenario first');
+                return;
+            }
+
+            const amountInput = document.getElementById('investment-amount');
+            const scenarioNameInput = document.getElementById('scenario-name');
+            const amount = parseFloat(amountInput.value);
+            
+            if (isNaN(amount) || amount <= 0) {
+                alert('Please enter a valid investment amount');
+                return;
+            }
+
+            // Get the price from selectedStock.data (same logic as calculateWhatIf)
+            const price = selectedStock.data.current_price || selectedStock.data.price || selectedStock.data.last_trade_price || 0;
+            
+            if (!price || price <= 0) {
+                alert('Unable to get current stock price');
+                return;
+            }
+
+            const shares = amount / price;
+            const scenarioName = scenarioNameInput.value.trim() || `${selectedStock.symbol} - $${amount.toFixed(2)}`;
+
+            console.log('Saving scenario:', { symbol: selectedStock.symbol, amount, shares, price, name: scenarioName });
+
+            try {
+                const response = await fetch('/api/what-if/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol: selectedStock.symbol,
+                        amount: amount,
+                        shares: shares,
+                        price: price,
+                        name: scenarioName
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Scenario saved successfully!');
+                    
+                    // Clear all inputs and reset form
+                    scenarioNameInput.value = '';
+                    amountInput.value = '';
+                    document.getElementById('stock-search-input').value = '';
+                    
+                    // Clear selected stock
+                    selectedStock = null;
+                    document.getElementById('selected-stock-container').style.display = 'none';
+                    document.getElementById('calculate-btn').disabled = true;
+                    
+                    // Hide results and show empty state
+                    document.getElementById('results-section').style.display = 'none';
+                    document.getElementById('empty-state').style.display = 'block';
+                    
+                    // Reload saved scenarios
+                    loadSavedScenarios();
+                } else {
+                    alert('Error saving scenario: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving scenario:', error);
+                alert('Error saving scenario: ' + error.message);
+            }
+        }
+
+        // Load saved scenarios
+        async function loadSavedScenarios() {
+            const listDiv = document.getElementById('saved-scenarios-list');
+            
+            try {
+                const response = await fetch('/api/what-if/list');
+                
+                if (response.status === 401) {
+                    listDiv.innerHTML = `
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <i class="fas fa-bookmark"></i>
+                            <p>Please login to view saved scenarios.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    let html = '';
+                    
+                    // Reverse to show newest first
+                    result.data.reverse().forEach(scenario => {
+                        const date = new Date(scenario.timestamp);
+                        const formattedDate = date.toLocaleDateString();
+                        const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        
+                        html += `
+                            <div class="scenario-card">
+                                <div class="scenario-header">
+                                    <div style="flex: 1;">
+                                        <div class="scenario-title">
+                                            ${scenario.name}
+                                        </div>
+                                        <div class="scenario-date">
+                                            ${formattedDate} ${formattedTime}
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onclick="deleteScenario(${scenario.id})" 
+                                        class="delete-btn"
+                                    >
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                                <div class="scenario-grid">
+                                    <div>
+                                        <div class="scenario-label">Symbol</div>
+                                        <div class="scenario-value">${scenario.symbol}</div>
+                                    </div>
+                                    <div>
+                                        <div class="scenario-label">Investment</div>
+                                        <div class="scenario-value">$${parseFloat(scenario.amount).toFixed(2)}</div>
+                                    </div>
+                                    <div>
+                                        <div class="scenario-label">Shares</div>
+                                        <div class="scenario-value">${parseFloat(scenario.shares).toFixed(4)}</div>
+                                    </div>
+                                    <div>
+                                        <div class="scenario-label">Price at Save</div>
+                                        <div class="scenario-value">$${parseFloat(scenario.price).toFixed(2)}</div>
+                                    </div>
+                                </div>
+                                <div id="scenario-performance-${scenario.id}" class="scenario-performance">
+                                    Loading current performance...
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    listDiv.innerHTML = html;
+                    
+                    // Load current prices for performance calculation
+                    result.data.forEach(scenario => {
+                        loadScenarioPerformance(scenario);
+                    });
+                } else {
+                    listDiv.innerHTML = `
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <i class="fas fa-bookmark"></i>
+                            <p>No saved scenarios yet. Calculate and save a scenario to track it over time.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading saved scenarios:', error);
+                listDiv.innerHTML = `
+                    <div class="empty-state" style="padding: 40px 20px;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Error loading scenarios: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load performance for a specific scenario
+        async function loadScenarioPerformance(scenario) {
+            const perfDiv = document.getElementById(`scenario-performance-${scenario.id}`);
+            if (!perfDiv) return;
+
+            try {
+                const response = await fetch(`/api/stock-details/${scenario.symbol}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const currentPrice = result.data.current_price || result.data.price || 0;
+                    const originalValue = parseFloat(scenario.amount);
+                    const currentValue = parseFloat(scenario.shares) * currentPrice;
+                    const gainLoss = currentValue - originalValue;
+                    const gainLossPercent = originalValue > 0 ? (gainLoss / originalValue) * 100 : 0;
+                    const gainLossClass = gainLoss >= 0 ? 'positive' : 'negative';
+                    const gainLossSign = gainLoss >= 0 ? '+' : '';
+
+                    perfDiv.innerHTML = `
+                        <div class="performance-grid">
+                            <div>
+                                <div class="scenario-label">Current Price</div>
+                                <div class="scenario-value">$${currentPrice.toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <div class="scenario-label">Current Value</div>
+                                <div class="scenario-value">$${currentValue.toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <div class="scenario-label">Performance</div>
+                                <div class="scenario-value ${gainLossClass}">
+                                    ${gainLossSign}$${Math.abs(gainLoss).toFixed(2)} (${gainLossSign}${Math.abs(gainLossPercent).toFixed(2)}%)
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    perfDiv.innerHTML = '<div class="scenario-label">Unable to load current performance</div>';
+                }
+            } catch (error) {
+                console.error(`Error loading performance for ${scenario.symbol}:`, error);
+                perfDiv.innerHTML = '<div class="scenario-label error-message">Error loading performance</div>';
+            }
+        }
+
+        // Delete scenario
+        async function deleteScenario(scenarioId) {
+            if (!confirm('Are you sure you want to delete this scenario?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/what-if/delete/${scenarioId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loadSavedScenarios();
+                } else {
+                    alert('Error deleting scenario: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting scenario:', error);
+                alert('Error deleting scenario: ' + error.message);
+            }
+        }
+
+        // Check login status on page load
+        checkLoginStatus();
+    </script>
+</body>
+</html>
+
