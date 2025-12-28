@@ -588,8 +588,33 @@
             await originalCalculateWhatIf();
         };
 
-        // Save scenario function
-        async function saveScenario() {
+        // LocalStorage key for scenarios
+        const SCENARIOS_STORAGE_KEY = 'whatIfScenarios';
+
+        // Get scenarios from localStorage
+        function getSavedScenarios() {
+            try {
+                const data = localStorage.getItem(SCENARIOS_STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (error) {
+                console.error('Error reading scenarios from localStorage:', error);
+                return [];
+            }
+        }
+
+        // Save scenarios to localStorage
+        function saveScenariosToStorage(scenarios) {
+            try {
+                localStorage.setItem(SCENARIOS_STORAGE_KEY, JSON.stringify(scenarios));
+                return true;
+            } catch (error) {
+                console.error('Error saving scenarios to localStorage:', error);
+                return false;
+            }
+        }
+
+        // Save scenario function (using localStorage)
+        function saveScenario() {
             if (!selectedStock || !portfolioData) {
                 alert('Please calculate a what-if scenario first');
                 return;
@@ -615,142 +640,113 @@
             const shares = amount / price;
             const scenarioName = scenarioNameInput.value.trim() || `${selectedStock.symbol} - $${amount.toFixed(2)}`;
 
-            console.log('Saving scenario:', { symbol: selectedStock.symbol, amount, shares, price, name: scenarioName });
-
-            try {
-                const response = await fetch('/api/what-if/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        symbol: selectedStock.symbol,
-                        amount: amount,
-                        shares: shares,
-                        price: price,
-                        name: scenarioName
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('Scenario saved successfully!');
-                    
-                    // Clear all inputs and reset form
-                    scenarioNameInput.value = '';
-                    amountInput.value = '';
-                    document.getElementById('stock-search-input').value = '';
-                    
-                    // Clear selected stock
-                    selectedStock = null;
-                    document.getElementById('selected-stock-container').style.display = 'none';
-                    document.getElementById('calculate-btn').disabled = true;
-                    
-                    // Hide results and show empty state
-                    document.getElementById('results-section').style.display = 'none';
-                    document.getElementById('empty-state').style.display = 'block';
-                    
-                    // Reload saved scenarios
-                    loadSavedScenarios();
-                } else {
-                    alert('Error saving scenario: ' + (result.message || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error saving scenario:', error);
-                alert('Error saving scenario: ' + error.message);
+            // Get existing scenarios and add new one
+            const scenarios = getSavedScenarios();
+            const newScenario = {
+                id: Date.now(), // Use timestamp as unique ID
+                name: scenarioName,
+                symbol: selectedStock.symbol,
+                amount: amount,
+                shares: shares,
+                price: price,
+                timestamp: new Date().toISOString()
+            };
+            
+            scenarios.push(newScenario);
+            
+            if (saveScenariosToStorage(scenarios)) {
+                alert('Scenario saved successfully!');
+                
+                // Clear all inputs and reset form
+                scenarioNameInput.value = '';
+                amountInput.value = '';
+                document.getElementById('stock-search-input').value = '';
+                
+                // Clear selected stock
+                selectedStock = null;
+                document.getElementById('selected-stock-container').style.display = 'none';
+                document.getElementById('calculate-btn').disabled = true;
+                
+                // Hide results and show empty state
+                document.getElementById('results-section').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+                
+                // Reload saved scenarios
+                loadSavedScenarios();
+            } else {
+                alert('Error saving scenario to local storage');
             }
         }
 
-        // Load saved scenarios
-        async function loadSavedScenarios() {
+        // Load saved scenarios (from localStorage)
+        function loadSavedScenarios() {
             const listDiv = document.getElementById('saved-scenarios-list');
             
-            try {
-                const response = await fetch('/api/what-if/list');
+            const scenarios = getSavedScenarios();
+
+            if (scenarios && scenarios.length > 0) {
+                let html = '';
                 
-                if (response.status === 401) {
-                    listDiv.innerHTML = `
-                        <div class="empty-state" style="padding: 40px 20px;">
-                            <i class="fas fa-bookmark"></i>
-                            <p>Please login to view saved scenarios.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                const result = await response.json();
-
-                if (result.success && result.data && result.data.length > 0) {
-                    let html = '';
+                // Reverse to show newest first
+                [...scenarios].reverse().forEach(scenario => {
+                    const date = new Date(scenario.timestamp);
+                    const formattedDate = date.toLocaleDateString();
+                    const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     
-                    // Reverse to show newest first
-                    result.data.reverse().forEach(scenario => {
-                        const date = new Date(scenario.timestamp);
-                        const formattedDate = date.toLocaleDateString();
-                        const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        
-                        html += `
-                            <div class="scenario-card">
-                                <div class="scenario-header">
-                                    <div style="flex: 1;">
-                                        <div class="scenario-title">
-                                            ${scenario.name}
-                                        </div>
-                                        <div class="scenario-date">
-                                            ${formattedDate} ${formattedTime}
-                                        </div>
+                    html += `
+                        <div class="scenario-card">
+                            <div class="scenario-header">
+                                <div style="flex: 1;">
+                                    <div class="scenario-title">
+                                        ${scenario.name}
                                     </div>
-                                    <button 
-                                        onclick="deleteScenario(${scenario.id})" 
-                                        class="delete-btn"
-                                    >
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </div>
-                                <div class="scenario-grid">
-                                    <div>
-                                        <div class="scenario-label">Symbol</div>
-                                        <div class="scenario-value">${scenario.symbol}</div>
-                                    </div>
-                                    <div>
-                                        <div class="scenario-label">Investment</div>
-                                        <div class="scenario-value">$${parseFloat(scenario.amount).toFixed(2)}</div>
-                                    </div>
-                                    <div>
-                                        <div class="scenario-label">Shares</div>
-                                        <div class="scenario-value">${parseFloat(scenario.shares).toFixed(4)}</div>
-                                    </div>
-                                    <div>
-                                        <div class="scenario-label">Price at Save</div>
-                                        <div class="scenario-value">$${parseFloat(scenario.price).toFixed(2)}</div>
+                                    <div class="scenario-date">
+                                        ${formattedDate} ${formattedTime}
                                     </div>
                                 </div>
-                                <div id="scenario-performance-${scenario.id}" class="scenario-performance">
-                                    Loading current performance...
+                                <button 
+                                    onclick="deleteScenario(${scenario.id})" 
+                                    class="delete-btn"
+                                >
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                            <div class="scenario-grid">
+                                <div>
+                                    <div class="scenario-label">Symbol</div>
+                                    <div class="scenario-value">${scenario.symbol}</div>
+                                </div>
+                                <div>
+                                    <div class="scenario-label">Investment</div>
+                                    <div class="scenario-value">$${parseFloat(scenario.amount).toFixed(2)}</div>
+                                </div>
+                                <div>
+                                    <div class="scenario-label">Shares</div>
+                                    <div class="scenario-value">${parseFloat(scenario.shares).toFixed(4)}</div>
+                                </div>
+                                <div>
+                                    <div class="scenario-label">Price at Save</div>
+                                    <div class="scenario-value">$${parseFloat(scenario.price).toFixed(2)}</div>
                                 </div>
                             </div>
-                        `;
-                    });
-                    
-                    listDiv.innerHTML = html;
-                    
-                    // Load current prices for performance calculation
-                    result.data.forEach(scenario => {
-                        loadScenarioPerformance(scenario);
-                    });
-                } else {
-                    listDiv.innerHTML = `
-                        <div class="empty-state" style="padding: 40px 20px;">
-                            <i class="fas fa-bookmark"></i>
-                            <p>No saved scenarios yet. Calculate and save a scenario to track it over time.</p>
+                            <div id="scenario-performance-${scenario.id}" class="scenario-performance">
+                                Loading current performance...
+                            </div>
                         </div>
                     `;
-                }
-            } catch (error) {
-                console.error('Error loading saved scenarios:', error);
+                });
+                
+                listDiv.innerHTML = html;
+                
+                // Load current prices for performance calculation
+                scenarios.forEach(scenario => {
+                    loadScenarioPerformance(scenario);
+                });
+            } else {
                 listDiv.innerHTML = `
                     <div class="empty-state" style="padding: 40px 20px;">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <p>Error loading scenarios: ${error.message}</p>
+                        <i class="fas fa-bookmark"></i>
+                        <p>No saved scenarios yet. Calculate and save a scenario to track it over time.</p>
                     </div>
                 `;
             }
@@ -801,27 +797,19 @@
             }
         }
 
-        // Delete scenario
-        async function deleteScenario(scenarioId) {
+        // Delete scenario (from localStorage)
+        function deleteScenario(scenarioId) {
             if (!confirm('Are you sure you want to delete this scenario?')) {
                 return;
             }
 
-            try {
-                const response = await fetch(`/api/what-if/delete/${scenarioId}`, {
-                    method: 'DELETE'
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    loadSavedScenarios();
-                } else {
-                    alert('Error deleting scenario: ' + (result.message || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error deleting scenario:', error);
-                alert('Error deleting scenario: ' + error.message);
+            const scenarios = getSavedScenarios();
+            const updatedScenarios = scenarios.filter(s => s.id !== scenarioId);
+            
+            if (saveScenariosToStorage(updatedScenarios)) {
+                loadSavedScenarios();
+            } else {
+                alert('Error deleting scenario');
             }
         }
 

@@ -1420,7 +1420,32 @@
             }
         }
 
-        async function loadWhatIfScenarios() {
+        // LocalStorage key for scenarios 
+        const SCENARIOS_STORAGE_KEY = 'whatIfScenarios';
+
+        // Get scenarios from localStorage
+        function getSavedScenarios() {
+            try {
+                const data = localStorage.getItem(SCENARIOS_STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (error) {
+                console.error('Error reading scenarios from localStorage:', error);
+                return [];
+            }
+        }
+
+        // Save scenarios to localStorage
+        function saveScenariosToStorage(scenarios) {
+            try {
+                localStorage.setItem(SCENARIOS_STORAGE_KEY, JSON.stringify(scenarios));
+                return true;
+            } catch (error) {
+                console.error('Error saving scenarios to localStorage:', error);
+                return false;
+            }
+        }
+
+        function loadWhatIfScenarios() {
             const scenariosSection = document.getElementById('what-if-scenarios-section');
             const scenariosList = document.getElementById('what-if-scenarios-list');
             
@@ -1429,73 +1454,51 @@
                 return;
             }
             
-            try {
-                const response = await fetch('/api/what-if/list');
+            const scenarios = getSavedScenarios();
+            
+            if (scenarios && scenarios.length > 0) {
+                scenariosSection.style.display = 'block';
                 
-                // Check if request failed due to auth
-                if (response.status === 401) {
-                    // User not logged in, hide section
-                    scenariosSection.style.display = 'none';
-                    return;
-                }
+                let scenariosHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">';
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result.success && result.data && result.data.length > 0) {
-                    scenariosSection.style.display = 'block';
+                [...scenarios].reverse().forEach(scenario => {
+                    const date = new Date(scenario.timestamp);
+                    const formattedDate = date.toLocaleDateString();
                     
-                    let scenariosHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">';
-                    
-                    result.data.reverse().forEach(scenario => {
-                        const date = new Date(scenario.timestamp);
-                        const formattedDate = date.toLocaleDateString();
-                        
-                        scenariosHTML += `
-                            <div class="scenario-card-portfolio">
-                                <div class="scenario-card-header">
-                                    <div>
-                                        <div class="scenario-card-title">
-                                            ${scenario.name}
-                                        </div>
-                                        <div class="scenario-card-date">
-                                            ${formattedDate}
-                                        </div>
+                    scenariosHTML += `
+                        <div class="scenario-card-portfolio">
+                            <div class="scenario-card-header">
+                                <div>
+                                    <div class="scenario-card-title">
+                                        ${scenario.name}
                                     </div>
-                                    <button onclick="deleteWhatIfScenario(${scenario.id})" class="scenario-delete-btn">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="scenario-card-date">
+                                        ${formattedDate}
+                                    </div>
                                 </div>
-                                <div class="scenario-card-info">
-                                    ${scenario.symbol} • $${parseFloat(scenario.amount).toFixed(2)} • ${parseFloat(scenario.shares).toFixed(4)} shares
-                                </div>
-                                <div id="scenario-performance-${scenario.id}" class="scenario-card-performance">
-                                    Loading performance...
-                                </div>
+                                <button onclick="deleteWhatIfScenario(${scenario.id})" class="scenario-delete-btn">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
-                        `;
-                    });
-                    
-                    scenariosHTML += '</div>';
-                    scenariosList.innerHTML = scenariosHTML;
-                    
-                    // Load current prices for all scenarios
-                    result.data.forEach(scenario => {
-                        loadScenarioPerformance(scenario);
-                    });
-                } else {
-                    scenariosSection.style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Error loading what-if scenarios:', error);
-                // Don't show error if user is not logged in (401)
-                const scenariosSection = document.getElementById('what-if-scenarios-section');
-                if (scenariosSection) {
-                    scenariosSection.style.display = 'none';
-                }
+                            <div class="scenario-card-info">
+                                ${scenario.symbol} • $${parseFloat(scenario.amount).toFixed(2)} • ${parseFloat(scenario.shares).toFixed(4)} shares
+                            </div>
+                            <div id="scenario-performance-${scenario.id}" class="scenario-card-performance">
+                                Loading performance...
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                scenariosHTML += '</div>';
+                scenariosList.innerHTML = scenariosHTML;
+                
+                // Load current prices for all scenarios
+                scenarios.forEach(scenario => {
+                    loadScenarioPerformance(scenario);
+                });
+            } else {
+                scenariosSection.style.display = 'none';
             }
         }
 
@@ -1546,24 +1549,17 @@
             }
         }
 
-        async function deleteWhatIfScenario(scenarioId) {
+        function deleteWhatIfScenario(scenarioId) {
             if (!confirm('Are you sure you want to delete this scenario?')) {
                 return;
             }
 
-            try {
-                const response = await fetch(`/api/what-if/delete/${scenarioId}`, {
-                    method: 'DELETE'
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    await loadWhatIfScenarios();
-                } else {
-                    alert(`Error deleting scenario: ${result.message}`);
-                }
-            } catch (error) {
-                console.error('Error deleting scenario:', error);
+            const scenarios = getSavedScenarios();
+            const updatedScenarios = scenarios.filter(s => s.id !== scenarioId);
+            
+            if (saveScenariosToStorage(updatedScenarios)) {
+                loadWhatIfScenarios();
+            } else {
                 alert('Error deleting scenario');
             }
         }
