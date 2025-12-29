@@ -46,8 +46,8 @@ A Flask web application for tracking and analyzing your Robinhood portfolio with
 1. **Clone the repository**
 
    ```bash
-   git clone git@github.com:Alan0893/robinhood_portfolio.git
-   cd robinhood_portfolio
+   git clone git@github.com:Alan0893/robinhood-portfolio.git
+   cd robinhood-portfolio
    ```
 
 2. **Create a virtual environment**
