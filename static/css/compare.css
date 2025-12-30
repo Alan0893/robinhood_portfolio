@@ -596,3 +596,193 @@ body.night-mode .metric-value.positive {
 body.night-mode .metric-value.winner {
     background: rgba(0, 200, 5, 0.25);
 }
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Tablet styles */
+@media screen and (max-width: 1024px) {
+    .container {
+        max-width: 100%;
+    }
+    
+    .comparison-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .comparison-table {
+        min-width: 600px;
+    }
+}
+
+/* Mobile styles */
+@media screen and (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+    }
+    
+    .header-left {
+        width: 100%;
+    }
+    
+    .header-right {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .header-button {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+    
+    .header-button span {
+        display: none;
+    }
+    
+    .header-button i {
+        margin: 0;
+    }
+    
+    .dashboard {
+        padding: 16px;
+    }
+    
+    .search-section {
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .search-section h2 {
+        font-size: 18px;
+    }
+    
+    .stock-search-input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .search-result-item {
+        padding: 10px 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .add-to-compare-btn {
+        width: 100%;
+        padding: 8px 12px;
+    }
+    
+    .comparison-table-container {
+        margin: 0 -16px;
+        padding: 0 16px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+    
+    .stock-symbol {
+        font-size: 14px;
+    }
+    
+    .stock-name {
+        font-size: 10px;
+    }
+    
+    .stock-price {
+        font-size: 14px;
+    }
+    
+    .metric-label {
+        font-size: 11px;
+    }
+    
+    .metric-value {
+        font-size: 13px;
+    }
+}
+
+/* Small mobile styles */
+@media screen and (max-width: 480px) {
+    .header {
+        padding: 12px;
+    }
+    
+    .header-right {
+        gap: 8px;
+    }
+    
+    .header-button {
+        padding: 6px 8px;
+    }
+    
+    .header-icon-button {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .header h1 {
+        font-size: 18px;
+    }
+    
+    .dashboard {
+        padding: 12px;
+    }
+    
+    .search-section {
+        padding: 12px;
+    }
+    
+    .search-section h2 {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+    }
+    
+    .stock-symbol {
+        font-size: 12px;
+    }
+    
+    .stock-name {
+        font-size: 9px;
+    }
+    
+    .empty-state {
+        padding: 24px 16px;
+    }
+    
+    .empty-state h3 {
+        font-size: 16px;
+    }
+    
+    .empty-state p {
+        font-size: 13px;
+    }
+}
+
+/* Dark mode responsive adjustments */
+@media screen and (max-width: 768px) {
+    body.night-mode .comparison-table-container {
+        border-left: none;
+        border-right: none;
+    }
+}

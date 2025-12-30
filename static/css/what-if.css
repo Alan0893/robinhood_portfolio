@@ -829,3 +829,236 @@ body.night-mode .warning-title,
 body.night-mode .warning-text {
     color: #ffd54f;
 }
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Tablet styles */
+@media screen and (max-width: 1024px) {
+    .container {
+        max-width: 100%;
+    }
+    
+    .scenario-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .performance-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .results-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile styles */
+@media screen and (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+    }
+    
+    .header-left {
+        width: 100%;
+    }
+    
+    .header-right {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .header-button {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+    
+    .header-button span {
+        display: none;
+    }
+    
+    .header-button i {
+        margin: 0;
+    }
+    
+    .dashboard {
+        padding: 16px;
+    }
+    
+    .input-section {
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .input-section h2 {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+    
+    .input-group {
+        margin-bottom: 16px;
+    }
+    
+    .input-group input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .stock-search-input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .search-result-item {
+        padding: 10px 12px;
+    }
+    
+    .calculate-btn {
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    .scenario-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .performance-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .results-card {
+        padding: 16px;
+    }
+    
+    .results-card h3 {
+        font-size: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .scenario-card {
+        padding: 12px;
+    }
+    
+    .scenario-title {
+        font-size: 13px;
+    }
+    
+    .holding-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .holding-value-container {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .warning-banner {
+        padding: 12px;
+    }
+    
+    .warning-title {
+        font-size: 14px;
+    }
+    
+    .warning-text {
+        font-size: 13px;
+    }
+}
+
+/* Small mobile styles */
+@media screen and (max-width: 480px) {
+    .header {
+        padding: 12px;
+    }
+    
+    .header-right {
+        gap: 8px;
+    }
+    
+    .header-button {
+        padding: 6px 8px;
+    }
+    
+    .header-icon-button {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .header h1 {
+        font-size: 18px;
+    }
+    
+    .dashboard {
+        padding: 12px;
+    }
+    
+    .input-section {
+        padding: 12px;
+    }
+    
+    .input-section h2 {
+        font-size: 16px;
+    }
+    
+    .input-group label {
+        font-size: 13px;
+    }
+    
+    .input-group input {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .calculate-btn {
+        padding: 10px;
+        font-size: 13px;
+        margin-top: 16px;
+    }
+    
+    .results-card {
+        padding: 12px;
+    }
+    
+    .results-card h3 {
+        font-size: 14px;
+    }
+    
+    .scenario-card {
+        padding: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .scenario-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .delete-btn {
+        width: 100%;
+        padding: 8px;
+    }
+    
+    .selected-stock {
+        padding: 10px;
+    }
+    
+    .remove-stock-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+}

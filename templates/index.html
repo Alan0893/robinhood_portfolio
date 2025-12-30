@@ -921,118 +921,118 @@
             const borderColor = isNightMode ? '#333333' : '#e5e5e5';
             
             let summaryHTML = `
-                <div style="display: flex; align-items: stretch; flex-wrap: nowrap; gap: 0; border-top: 1px solid ${borderColor}; width: 100%;">
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Total Gain/Loss</div>
-                        <div style="font-size: 24px; font-weight: 600; color: ${totalGainLoss >= 0 ? '#00C805' : '#d32f2f'}; margin-bottom: 4px;">
+                <div class="portfolio-summary-grid">
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Total Gain/Loss</div>
+                        <div class="portfolio-summary-value" style="color: ${totalGainLoss >= 0 ? '#00C805' : '#d32f2f'};">
                         ${totalGainLoss >= 0 ? '+' : ''}$${totalGainLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                        <div style="font-size: 13px; color: ${totalGainLossPercent >= 0 ? '#00C805' : '#d32f2f'};">
+                        <div class="portfolio-summary-subvalue" style="color: ${totalGainLossPercent >= 0 ? '#00C805' : '#d32f2f'};">
                         ${totalGainLossPercent >= 0 ? '+' : ''}${totalGainLossPercent.toFixed(2)}%
                     </div>
                 </div>
                 
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Today's Change</div>
-                        <div style="font-size: 24px; font-weight: 600; color: ${totalDayChange >= 0 ? '#00C805' : '#d32f2f'}; margin-bottom: 4px;">
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Today's Change</div>
+                        <div class="portfolio-summary-value" style="color: ${totalDayChange >= 0 ? '#00C805' : '#d32f2f'};">
                         ${totalDayChange >= 0 ? '+' : ''}$${totalDayChange.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                        <div style="font-size: 13px; color: ${totalDayChangePercent >= 0 ? '#00C805' : '#d32f2f'};">
+                        <div class="portfolio-summary-subvalue" style="color: ${totalDayChangePercent >= 0 ? '#00C805' : '#d32f2f'};">
                         ${totalDayChangePercent >= 0 ? '+' : ''}${totalDayChangePercent.toFixed(2)}%
                     </div>
                 </div>
                 
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Gainer Today</div>
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Top Gainer Today</div>
                         ${topGainerToday ? `
-                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                            <div class="portfolio-summary-value" style="font-size: inherit; color: ${textColor};">
                                 ${topGainerToday.symbol}
                             </div>
-                            <div style="font-size: 13px; color: ${topGainerToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
+                            <div class="portfolio-summary-subvalue" style="color: ${topGainerToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
                                 ${topGainerToday.day_change_percent >= 0 ? '+' : ''}${topGainerToday.day_change_percent.toFixed(2)}%
                             </div>
                         ` : `
-                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
-                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                            <div class="portfolio-summary-value">--</div>
+                            <div class="portfolio-summary-subvalue">N/A</div>
                         `}
                     </div>
                     
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Loser Today</div>
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Top Loser Today</div>
                         ${topLoserToday ? `
-                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                            <div class="portfolio-summary-value" style="font-size: inherit; color: ${textColor};">
                                 ${topLoserToday.symbol}
                             </div>
-                            <div style="font-size: 13px; color: ${topLoserToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
+                            <div class="portfolio-summary-subvalue" style="color: ${topLoserToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
                                 ${topLoserToday.day_change_percent >= 0 ? '+' : ''}${topLoserToday.day_change_percent.toFixed(2)}%
                             </div>
                         ` : `
-                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
-                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                            <div class="portfolio-summary-value">--</div>
+                            <div class="portfolio-summary-subvalue">N/A</div>
                         `}
                     </div>
                     
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Avg Return</div>
-                        <div style="font-size: 24px; font-weight: 600; color: ${avgGainLossPercent >= 0 ? '#00C805' : '#d32f2f'}; margin-bottom: 4px;">
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Avg Return</div>
+                        <div class="portfolio-summary-value" style="color: ${avgGainLossPercent >= 0 ? '#00C805' : '#d32f2f'};">
                             ${avgGainLossPercent >= 0 ? '+' : ''}${avgGainLossPercent.toFixed(2)}%
                         </div>
-                        <div style="font-size: 13px; color: ${labelColor};">
+                        <div class="portfolio-summary-subvalue">
                             Per Holding
                         </div>
                     </div>
                     
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Gainer</div>
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Top Gainer</div>
                         ${largestGainer ? `
-                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                            <div class="portfolio-summary-value" style="font-size: inherit; color: ${textColor};">
                                 ${largestGainer.symbol}
                             </div>
-                            <div style="font-size: 13px; color: #00C805;">
+                            <div class="portfolio-summary-subvalue" style="color: #00C805;">
                                 +${largestGainer.gain_loss_percent.toFixed(2)}%
                             </div>
                         ` : `
-                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
-                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                            <div class="portfolio-summary-value">--</div>
+                            <div class="portfolio-summary-subvalue">N/A</div>
                         `}
                     </div>
                     
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Top Loser</div>
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Top Loser</div>
                         ${largestLoser ? `
-                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                            <div class="portfolio-summary-value" style="font-size: inherit; color: ${textColor};">
                                 ${largestLoser.symbol}
                             </div>
-                            <div style="font-size: 13px; color: #d32f2f;">
+                            <div class="portfolio-summary-subvalue" style="color: #d32f2f;">
                                 ${largestLoser.gain_loss_percent.toFixed(2)}%
                             </div>
                         ` : `
-                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
-                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                            <div class="portfolio-summary-value">--</div>
+                            <div class="portfolio-summary-subvalue">N/A</div>
                         `}
                     </div>
                     
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px; border-right: 1px solid ${borderColor};">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Largest Position</div>
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Largest Position</div>
                         ${largestPosition ? `
-                            <div style="font-size: 20px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                            <div class="portfolio-summary-value" style="font-size: inherit; color: ${textColor};">
                                 ${largestPosition.symbol}
                             </div>
-                            <div style="font-size: 13px; color: ${labelColor};">
+                            <div class="portfolio-summary-subvalue">
                                 ${topHoldingPercentage.toFixed(1)}% of portfolio
                             </div>
                         ` : `
-                            <div style="font-size: 24px; font-weight: 600; color: ${labelColor}; margin-bottom: 4px;">--</div>
-                            <div style="font-size: 13px; color: ${labelColor};">N/A</div>
+                            <div class="portfolio-summary-value">--</div>
+                            <div class="portfolio-summary-subvalue">N/A</div>
                         `}
                     </div>
                     
-                    <div style="text-align: center; flex: 1 1 0; min-width: 0; padding: 20px;">
-                        <div style="font-size: 11px; color: ${labelColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Avg Position Size</div>
-                        <div style="font-size: 24px; font-weight: 600; color: ${textColor}; margin-bottom: 4px;">
+                    <div class="portfolio-summary-item">
+                        <div class="portfolio-summary-label">Avg Position Size</div>
+                        <div class="portfolio-summary-value" style="color: ${textColor};">
                             $${avgPositionSize.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </div>
-                        <div style="font-size: 13px; color: ${labelColor};">
+                        <div class="portfolio-summary-subvalue">
                             Per Holding
                         </div>
                     </div>
@@ -1060,7 +1060,7 @@
             const borderColor = isNightMode ? '#333333' : '#f0f0f0';
             
             let holdingsHTML = `
-                <div style="font-size: 12px; color: ${labelColor}; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Top 5 Holdings</div>
+                <div class="top-holdings-title">Top 5 Holdings</div>
             `;
             
             topHoldings.forEach((holding, index) => {
@@ -1070,27 +1070,27 @@
                 const dayChangeSign = holding.day_change >= 0 ? '+' : '';
                 
                 holdingsHTML += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 8px 0; ${index < topHoldings.length - 1 ? `border-bottom: 1px solid ${borderColor};` : ''}">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; margin-bottom: 2px; color: ${textColor};">
+                    <div class="top-holding-item" ${index === topHoldings.length - 1 ? 'style="border-bottom: none;"' : ''}>
+                        <div class="top-holding-info">
+                            <div class="top-holding-symbol">
                                 ${holding.symbol}
-                                <span style="font-size: 12px; color: ${labelColor}; font-weight: 400; margin-left: 6px;">
+                                <span class="top-holding-percentage">
                                     ${(holding.percentage || 0).toFixed(1)}%
                                 </span>
                             </div>
-                            <div style="font-size: 12px; color: ${labelColor};">${holding.company_name || holding.symbol}</div>
+                            <div class="top-holding-name">${holding.company_name || holding.symbol}</div>
                         </div>
-                        <div style="text-align: right; margin-right: 16px;">
-                            <div style="font-weight: 600; margin-bottom: 2px; color: ${textColor};">$${holding.market_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                            <div style="font-size: 11px; color: ${gainLossClass === 'positive' ? '#00C805' : '#d32f2f'};">
+                        <div class="top-holding-value">
+                            <div class="top-holding-market-value">$${holding.market_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div class="top-holding-gain" style="color: ${gainLossClass === 'positive' ? '#00C805' : '#d32f2f'};">
                                 ${gainLossSign}${holding.gain_loss_percent.toFixed(2)}%
                             </div>
                         </div>
-                        <div style="text-align: right; min-width: 80px;">
-                            <div style="font-size: 12px; font-weight: 500; margin-bottom: 2px; color: ${dayChangeClass === 'positive' ? '#00C805' : '#d32f2f'};">
+                        <div class="top-holding-day-change">
+                            <div class="top-holding-day-percent" style="color: ${dayChangeClass === 'positive' ? '#00C805' : '#d32f2f'};">
                                 ${dayChangeSign}${holding.day_change_percent.toFixed(2)}%
                             </div>
-                            <div style="font-size: 11px; color: ${labelColor};">
+                            <div class="top-holding-day-label">
                                 Today
                             </div>
                         </div>
