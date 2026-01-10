@@ -251,35 +251,42 @@ def get_account_cash(account_type='brokerage'):
         buying_power = 0.0
         portfolio_equity = 0.0
         cash = 0.0
+        phoenix_loaded = False
         
         try:
             phoenix_account = rh.load_phoenix_account()
-            if phoenix_account and isinstance(phoenix_account, list) and len(phoenix_account) > 0:
-                account_data = phoenix_account[0]  # Get first account
-                buying_power = float(account_data.get('account_buying_power', 0) or 0)
-                portfolio_equity = float(account_data.get('portfolio_equity', 0) or 0)
-                # Phoenix account might have cash in equities section
-                equities = account_data.get('equities', {})
-                if isinstance(equities, dict):
+            # Phoenix account returns a dictionary directly, not a list
+            if phoenix_account and isinstance(phoenix_account, dict):
+                phoenix_loaded = True
+                # Use uninvested_cash as the true buying power (actual cash available)
+                # account_buying_power includes instant/margin which may not reflect actual cash
+                cash = float(phoenix_account.get('uninvested_cash', 0) or 0)
+                if cash == 0:
+                    cash = float(phoenix_account.get('withdrawable_cash', 0) or 0)
+                # Use cash as buying power (actual settled funds available to invest)
+                buying_power = cash
+                portfolio_equity = float(phoenix_account.get('portfolio_equity', 0) or 0)
+                # Also check equities section for cash
+                equities = phoenix_account.get('equities', {})
+                if isinstance(equities, dict) and cash == 0:
                     cash = float(equities.get('cash', 0) or 0)
+                    buying_power = cash
+                print(f"Phoenix account data - uninvested_cash: {cash}, equity: {portfolio_equity}")
         except Exception as phoenix_error:
             print(f"Could not load phoenix account: {phoenix_error}")
         
-        # Fallback to load_account_profile if phoenix didn't work
-        if buying_power == 0:
+        # Fallback to load_account_profile ONLY if phoenix didn't load at all
+        if not phoenix_loaded:
             try:
                 profile = rh.load_account_profile()
                 if profile:
-                    buying_power = float(profile.get('buying_power', 0) or 0)
+                    # Use cash field, not buying_power (which includes margin)
                     cash = float(profile.get('cash', 0) or 0)
-                    if not cash:
+                    if cash == 0:
                         cash = float(profile.get('cash_available_for_withdrawal', 0) or 0)
+                    buying_power = cash
             except Exception as profile_error:
                 print(f"Could not load account profile: {profile_error}")
-        
-        # If we still don't have buying power but have cash, use cash
-        if buying_power == 0 and cash > 0:
-            buying_power = cash
         
         print(f"Account info - Cash: {cash}, Buying Power: {buying_power}, Portfolio Equity: {portfolio_equity}")
         
