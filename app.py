@@ -512,6 +512,7 @@ def api_export_portfolio():
                 'total_portfolio_value': data.get('total_value', 0),
                 'stock_value': data.get('stock_value', 0),
                 'cash': data.get('cash', 0),
+                'buying_power': data.get('buying_power', 0),
                 'total_gain_loss': total_gain_loss,
                 'total_gain_loss_percent': total_gain_loss_percent,
                 'number_of_holdings': len(holdings)
@@ -528,9 +529,11 @@ def api_export_portfolio():
                 'symbol': h.get('symbol', 'N/A'),
                 'company': h.get('name', h.get('company_name', 'N/A')),
                 'sector': h.get('sector', 'Unknown'),
+                'industry': h.get('industry', 'Unknown'),
                 'current_price': h.get('current_price', 0),
                 'day_change': h.get('day_change', 0),
                 'day_change_percent': h.get('day_change_percent', 0),
+                'day_change_dollar': (h.get('day_change', 0) * quantity),
                 'shares': quantity,
                 'avg_buy_price': avg_buy_price,
                 'cost_basis': cost_basis,
@@ -546,18 +549,19 @@ def api_export_portfolio():
             writer = csv.writer(output)
             
             # Write header (matches table columns exactly)
-            writer.writerow(['Symbol', 'Company', 'Sector', 'Current Price', 
-                           'Day Change', 'Day Change %', 'Shares', 'Avg Buy Price',
+            writer.writerow(['Symbol', 'Company', 'Sector', 'Industry', 'Current Price', 
+                           'Day Change', 'Day Change $', 'Day Change %', 'Shares', 'Avg Buy Price',
                            'Cost Basis', 'Market Value', 'Gain/Loss', 'Gain/Loss %', 
                            '% of Portfolio'])
             
             # Write holdings
             for h in export_data['holdings']:
                 writer.writerow([
-                    h['symbol'], h['company'], h['sector'], h['current_price'],
-                    h['day_change'], h['day_change_percent'], h['shares'], 
-                    h['avg_buy_price'], h['cost_basis'], h['market_value'], 
-                    h['gain_loss'], h['gain_loss_percent'], h['portfolio_percent']
+                    h['symbol'], h['company'], h['sector'], h.get('industry', 'Unknown'), 
+                    h['current_price'], h['day_change'], h.get('day_change_dollar', 0), 
+                    h['day_change_percent'], h['shares'], h['avg_buy_price'], 
+                    h['cost_basis'], h['market_value'], h['gain_loss'], 
+                    h['gain_loss_percent'], h['portfolio_percent']
                 ])
             
             # Add summary at end
@@ -566,6 +570,7 @@ def api_export_portfolio():
             writer.writerow(['Total Portfolio Value', export_data['summary']['total_portfolio_value']])
             writer.writerow(['Stock Value', export_data['summary']['stock_value']])
             writer.writerow(['Cash', export_data['summary']['cash']])
+            writer.writerow(['Buying Power', export_data['summary']['buying_power']])
             writer.writerow(['Total Gain/Loss', export_data['summary']['total_gain_loss']])
             writer.writerow(['Total Gain/Loss %', export_data['summary']['total_gain_loss_percent']])
             
@@ -590,6 +595,7 @@ Exported: {export_data['exported_at']}
 Total Portfolio Value: ${export_data['summary']['total_portfolio_value']:,.2f}
 Stock Value: ${export_data['summary']['stock_value']:,.2f}
 Cash: ${export_data['summary']['cash']:,.2f}
+Buying Power: ${export_data['summary']['buying_power']:,.2f}
 Total Gain/Loss: ${export_data['summary']['total_gain_loss']:,.2f} ({export_data['summary']['total_gain_loss_percent']:.2f}%)
 Number of Holdings: {export_data['summary']['number_of_holdings']}
 
@@ -598,8 +604,8 @@ Number of Holdings: {export_data['summary']['number_of_holdings']}
                 for h in export_data['holdings']:
                     text_output += f"""
 {h['symbol']} ({h['company']})
-  Sector: {h['sector']}
-  Current Price: ${h['current_price']:.2f} | Day Change: ${h['day_change']:.2f} ({h['day_change_percent']:.2f}%)
+  Sector: {h['sector']} | Industry: {h.get('industry', 'Unknown')}
+  Current Price: ${h['current_price']:.2f} | Day Change: ${h.get('day_change_dollar', 0):,.2f} ({h['day_change_percent']:.2f}%)
   Shares: {h['shares']:.4f} | Avg Buy Price: ${h['avg_buy_price']:.2f}
   Cost Basis: ${h['cost_basis']:,.2f} | Market Value: ${h['market_value']:,.2f}
   Gain/Loss: ${h['gain_loss']:,.2f} ({h['gain_loss_percent']:.2f}%)
