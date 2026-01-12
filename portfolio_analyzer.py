@@ -258,20 +258,107 @@ def get_account_cash(account_type='brokerage'):
             # Phoenix account returns a dictionary directly, not a list
             if phoenix_account and isinstance(phoenix_account, dict):
                 phoenix_loaded = True
-                # Use uninvested_cash as the true buying power (actual cash available)
-                # account_buying_power includes instant/margin which may not reflect actual cash
-                cash = float(phoenix_account.get('uninvested_cash', 0) or 0)
-                if cash == 0:
-                    cash = float(phoenix_account.get('withdrawable_cash', 0) or 0)
-                # Use cash as buying power (actual settled funds available to invest)
-                buying_power = cash
-                portfolio_equity = float(phoenix_account.get('portfolio_equity', 0) or 0)
-                # Also check equities section for cash
+                
+                # Debug: print all available keys to help identify the right field
+                print(f"DEBUG: Phoenix account keys: {list(phoenix_account.keys())}")
+                
+                # Print ALL relevant cash and buying power fields from phoenix account
+                print("\n=== PHOENIX ACCOUNT - ALL CASH AND BUYING POWER FIELDS ===")
+                phoenix_relevant_fields = [
+                    'uninvested_cash',
+                    'withdrawable_cash',
+                    'cash',
+                    'buying_power',
+                    'account_buying_power',
+                    'extended_hours_buying_power',
+                    'day_trade_buying_power',
+                    'portfolio_equity',
+                    'equity',
+                    'margin_balances',
+                    'cash_balances'
+                ]
+                
+                for field in phoenix_relevant_fields:
+                    value = phoenix_account.get(field)
+                    if value is not None:
+                        try:
+                            if isinstance(value, dict):
+                                print(f"  {field}: {value}")
+                            else:
+                                float_value = float(value) if value else 0
+                                print(f"  {field}: {float_value}")
+                        except (ValueError, TypeError):
+                            print(f"  {field}: {value} (not a number)")
+                
+                # Check equities section
                 equities = phoenix_account.get('equities', {})
-                if isinstance(equities, dict) and cash == 0:
-                    cash = float(equities.get('cash', 0) or 0)
+                if isinstance(equities, dict):
+                    print(f"\n  equities keys: {list(equities.keys())}")
+                    for key in equities.keys():
+                        value = equities.get(key)
+                        if value is not None:
+                            try:
+                                if isinstance(value, dict):
+                                    print(f"    equities.{key}: {value}")
+                                else:
+                                    float_value = float(value) if value else 0
+                                    print(f"    equities.{key}: {float_value}")
+                            except (ValueError, TypeError):
+                                print(f"    equities.{key}: {value}")
+                
+                print("=== END OF PHOENIX ACCOUNT FIELDS ===\n")
+                
+                # Get cash (actual settled funds available for withdrawal)
+                cash = float(phoenix_account.get('withdrawable_cash', 0) or 0)
+                if cash == 0:
+                    cash = float(phoenix_account.get('uninvested_cash', 0) or 0)
+                
+                # Buying power = amount you can use to buy stocks right now
+                # Use portfolio_cash if available (equivalent to portfolio_cash in account profile)
+                # Otherwise use uninvested_cash (cash not in stocks)
+                buying_power = float(phoenix_account.get('portfolio_cash', 0) or 0)
+                if buying_power == 0:
+                    buying_power = float(phoenix_account.get('uninvested_cash', 0) or 0)
+                
+                # Check equities section for buying power fields
+                if isinstance(equities, dict):
+                    # Check for portfolio_cash in equities first
+                    equities_portfolio_cash = float(equities.get('portfolio_cash', 0) or 0)
+                    if equities_portfolio_cash > 0:
+                        buying_power = equities_portfolio_cash
+                    else:
+                        # uninvested_cash in equities is the buying power
+                        equities_uninvested = float(equities.get('uninvested_cash', 0) or 0)
+                        if equities_uninvested > 0:
+                            buying_power = equities_uninvested
+                    
+                    # Also check for cash in equities if we don't have it yet
+                    if cash == 0:
+                        cash = float(equities.get('cash', 0) or 0)
+                
+                # If buying_power is still 0, try other buying power fields as fallback
+                if buying_power == 0:
+                    buying_power = float(phoenix_account.get('extended_hours_buying_power', 0) or 0)
+                if buying_power == 0:
+                    buying_power = float(phoenix_account.get('day_trade_buying_power', 0) or 0)
+                if buying_power == 0:
+                    buying_power = float(phoenix_account.get('account_buying_power', 0) or 0)
+                if buying_power == 0:
+                    buying_power = float(phoenix_account.get('buying_power', 0) or 0)
+                
+                # Ensure buying power is never negative
+                if buying_power < 0:
+                    buying_power = 0.0
+                
+                # Don't fall back to negative cash - if we don't have positive buying power, it should be 0
+                # Only use cash if it's positive
+                if buying_power == 0 and cash > 0:
                     buying_power = cash
-                print(f"Phoenix account data - uninvested_cash: {cash}, equity: {portfolio_equity}")
+                elif buying_power == 0:
+                    buying_power = 0.0
+                
+                portfolio_equity = float(phoenix_account.get('portfolio_equity', 0) or 0)
+                print(f"Phoenix account data - cash: {cash}, buying_power: {buying_power}, equity: {portfolio_equity}")
         except Exception as phoenix_error:
             print(f"Could not load phoenix account: {phoenix_error}")
         
@@ -280,11 +367,67 @@ def get_account_cash(account_type='brokerage'):
             try:
                 profile = rh.load_account_profile()
                 if profile:
-                    # Use cash field, not buying_power (which includes margin)
-                    cash = float(profile.get('cash', 0) or 0)
+                    print(f"DEBUG: Account profile keys: {list(profile.keys())}")
+                    
+                    # Print ALL relevant cash and buying power fields
+                    print("\n=== ALL CASH AND BUYING POWER FIELDS ===")
+                    relevant_fields = [
+                        'buying_power',
+                        'onbp',
+                        'portfolio_cash',
+                        'cash',
+                        'cash_available_for_withdrawal',
+                        'cash_available_for_withdrawal_without_margin',
+                        'unsettled_funds',
+                        'unsettled_debit',
+                        'cash_held_for_orders',
+                        'uncleared_deposits',
+                        'sma',
+                        'sma_held_for_orders',
+                        'crypto_buying_power',
+                        'max_ach_early_access_amount',
+                        'dynamic_instant_limit',
+                        'user_real_instant_limit',
+                        'user_dynamic_instant_limit'
+                    ]
+                    
+                    for field in relevant_fields:
+                        value = profile.get(field)
+                        if value is not None:
+                            try:
+                                float_value = float(value) if value else 0
+                                print(f"  {field}: {float_value}")
+                            except (ValueError, TypeError):
+                                print(f"  {field}: {value} (not a number)")
+                    
+                    # Also check cash_balances and margin_balances if they exist
+                    if 'cash_balances' in profile:
+                        print(f"\n  cash_balances: {profile.get('cash_balances')}")
+                    if 'margin_balances' in profile:
+                        print(f"  margin_balances: {profile.get('margin_balances')}")
+                    
+                    print("=== END OF FIELDS ===\n")
+                    
+                    # Get cash (actual settled funds available for withdrawal)
+                    cash = float(profile.get('cash_available_for_withdrawal', 0) or 0)
                     if cash == 0:
-                        cash = float(profile.get('cash_available_for_withdrawal', 0) or 0)
-                    buying_power = cash
+                        cash = float(profile.get('cash', 0) or 0)
+                    
+                    # Buying power = amount you can use to buy stocks right now
+                    # Use 'portfolio_cash' - this is the actual cash available in the portfolio
+                    # (buying_power and onbp include margin/instant deposits that may not be accurate)
+                    buying_power = float(profile.get('portfolio_cash', 0) or 0)
+                    
+                    # Ensure buying power is never negative - if portfolio_cash is negative or missing, use 0
+                    if buying_power < 0:
+                        buying_power = 0.0
+                    
+                    # Don't fall back to negative cash values - if portfolio_cash is 0, buying power should be 0
+                    # Only use positive fallback values
+                    if buying_power == 0:
+                        cash_available = float(profile.get('cash_available_for_withdrawal', 0) or 0)
+                        if cash_available > 0:
+                            buying_power = cash_available
             except Exception as profile_error:
                 print(f"Could not load account profile: {profile_error}")
         

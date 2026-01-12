@@ -949,6 +949,9 @@
                                 ${topGainerToday.symbol}
                             </div>
                             <div class="portfolio-summary-subvalue" style="color: ${topGainerToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
+                                ${topGainerToday.day_change_percent >= 0 ? '+' : ''}$${((topGainerToday.day_change || 0) * (topGainerToday.quantity || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div class="portfolio-summary-subvalue" style="color: ${topGainerToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'}; font-size: 0.85em; margin-top: 2px;">
                                 ${topGainerToday.day_change_percent >= 0 ? '+' : ''}${topGainerToday.day_change_percent.toFixed(2)}%
                             </div>
                         ` : `
@@ -964,6 +967,9 @@
                                 ${topLoserToday.symbol}
                             </div>
                             <div class="portfolio-summary-subvalue" style="color: ${topLoserToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'};">
+                                ${topLoserToday.day_change_percent >= 0 ? '+' : ''}$${((topLoserToday.day_change || 0) * (topLoserToday.quantity || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div class="portfolio-summary-subvalue" style="color: ${topLoserToday.day_change_percent >= 0 ? '#00C805' : '#d32f2f'}; font-size: 0.85em; margin-top: 2px;">
                                 ${topLoserToday.day_change_percent >= 0 ? '+' : ''}${topLoserToday.day_change_percent.toFixed(2)}%
                             </div>
                         ` : `
@@ -989,6 +995,9 @@
                                 ${largestGainer.symbol}
                             </div>
                             <div class="portfolio-summary-subvalue" style="color: #00C805;">
+                                +$${(largestGainer.gain_loss || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div class="portfolio-summary-subvalue" style="color: #00C805; font-size: 0.85em; margin-top: 2px;">
                                 +${largestGainer.gain_loss_percent.toFixed(2)}%
                             </div>
                         ` : `
@@ -1004,6 +1013,9 @@
                                 ${largestLoser.symbol}
                             </div>
                             <div class="portfolio-summary-subvalue" style="color: #d32f2f;">
+                                $${(largestLoser.gain_loss || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div class="portfolio-summary-subvalue" style="color: #d32f2f; font-size: 0.85em; margin-top: 2px;">
                                 ${largestLoser.gain_loss_percent.toFixed(2)}%
                             </div>
                         ` : `
